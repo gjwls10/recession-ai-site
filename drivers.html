@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>경기침체 확률 — 원인 분석</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+</head>
+<body>
+<header class="site"></header>
+<main class="wrap">
+  <h1>원인 분석</h1>
+  <p class="lead">어떤 지표가 침체 확률을 끌어올리거나 내리고 있는지 보여 줍니다.</p>
+  <div class="toolbar"><span class="stat-label">예측 기간</span><div id="tabs"></div></div>
+  <div class="notice" id="warnings" hidden></div>
+
+  <section class="card summary" id="summary"></section>
+
+  <section class="block card">
+    <h2>지금 확률을 움직이는 지표</h2>
+    <p class="sub" id="current-sub"></p>
+    <div class="chart" id="current-chart" role="img" aria-label="피처별 현재 기여도 막대그래프"></div>
+    <div id="current-table"></div>
+  </section>
+
+  <section class="block card">
+    <h2>전월 대비 무엇이 바뀌었나</h2>
+    <p class="sub" id="change-sub"></p>
+    <div class="chart" id="change-chart" role="img" aria-label="전월 대비 확률 변화 분해 폭포수 차트"></div>
+    <div id="change-table"></div>
+  </section>
+
+  <section class="block card">
+    <h2>부문별 기여도 추이</h2>
+    <p class="sub">0보다 위는 확률을 높인 부문, 아래는 낮춘 부문입니다 (%p, 지표 하나만 바꿨을 때의 근사값). 아래 막대를 끌어 기간을 바꿀 수 있습니다.</p>
+    <div class="chart tall" id="sector-chart" role="img" aria-label="부문별 기여도 추이 누적 막대그래프"></div>
+    <div id="sector-table"></div>
+  </section>
+</main>
+<footer class="site"></footer>
+<script type="module" src="assets/drivers.js"></script>
+</body>
+</html>

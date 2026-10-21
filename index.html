@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>경기침체 확률 — 대시보드</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+</head>
+<body>
+<header class="site"></header>
+<main class="wrap">
+  <h1>한국 경기침체 확률</h1>
+  <p class="lead" id="lead">선행종합지수의 하강 신호를 기준으로 추정한 확률입니다.</p>
+  <div class="notice" id="warnings" hidden></div>
+
+  <div class="hero">
+    <div class="card" id="hero">
+      <div class="stat-label">현재 침체 확률</div>
+      <div class="hero-number loading">…</div>
+    </div>
+    <div class="grid cols-3" id="horizon-cards"></div>
+  </div>
+
+  <section class="block card summary" id="summary" aria-label="이번 달 요약"></section>
+
+  <section class="block card">
+    <div class="toolbar"><h2 style="margin:0">확률 추이</h2><div id="prob-tabs"></div></div>
+    <p class="sub" id="prob-sub"></p>
+    <div class="chart tall" id="prob-chart" role="img" aria-label="침체 확률 추이 그래프"></div>
+    <div id="prob-table"></div>
+  </section>
+
+  <div class="grid cols-2 block">
+    <section class="card">
+      <h2>선행종합지수 신호 (타깃)</h2>
+      <p class="sub" id="signal-sub"></p>
+      <div class="chart short" id="signal-chart" role="img" aria-label="선행종합지수 전년동월비 최근 추이"></div>
+      <div id="signal-table"></div>
+    </section>
+    <section class="card">
+      <h2>실물 확인: 생산확산지수 (참고)</h2>
+      <p class="sub">50 아래면 생산이 줄어든 업종이 더 많다는 뜻입니다. 3개월 평균.</p>
+      <div class="chart short" id="diffusion-chart" role="img" aria-label="생산확산지수 최근 추이"></div>
+      <div id="diffusion-table"></div>
+    </section>
+  </div>
+
+  <section class="block card">
+    <h2>데이터 기준</h2>
+    <dl class="kv" id="asof"></dl>
+  </section>
+</main>
+<footer class="site"></footer>
+<script type="module" src="assets/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,1402 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1분 투자 챌린지</title>
+<style>
+/* ===== 색상 ===== */
+:root {
+  --bg: #0d1424;
+  --panel: #16203a;
+  --panel2: #1e2a4a;
+  --line: #2c3a60;
+  --text: #eef2fb;
+  --muted: #93a0c0;
+  --accent: #ffcc33;
+  --up: #ff4d4f;     /* 상승 = 빨강 */
+  --down: #3d8bff;   /* 하락 = 파랑 */
+  --flat: #a8b0c4;
+  --danger-bg: #3a1a1c;
+  --practice: #3ecf8e;      /* 연습 모드 강조색 */
+  --practice-bg: #15322a;
+  color-scheme: dark;
+}
+
+/* ===== 공통 ===== */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  font-size: 18px;
+}
+button { font: inherit; cursor: pointer; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 40px; min-height: 100%; }
+.screen { display: none; }
+.screen.active { display: block; animation: fade .25s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes pop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+
+.up { color: var(--up); }
+.down { color: var(--down); }
+.flat { color: var(--flat); }
+
+.btn {
+  border: 0; border-radius: 14px; padding: 16px 28px;
+  background: var(--accent); color: #1a1a1a; font-weight: 800; font-size: 22px;
+}
+.btn:hover { filter: brightness(1.07); }
+.btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-size: 15px; padding: 8px 14px; font-weight: 500; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
+.card h2 { margin: 0 0 14px; font-size: 22px; }
+.center { text-align: center; margin-top: 22px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pill { background: var(--panel2); border-radius: 999px; padding: 8px 18px; font-weight: 700; }
+.pill b { color: var(--accent); }
+
+/* ===== 시작 화면 ===== */
+.hero { text-align: center; padding: 30px 0 10px; }
+.hero h1 { font-size: 64px; margin: 0; letter-spacing: -2px; }
+.hero h1 span { color: var(--accent); }
+.hero p { color: var(--muted); font-size: 21px; margin: 12px 0 0; }
+.start-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 22px; margin-top: 30px; }
+.nick-row { display: flex; gap: 10px; }
+.nick-row input {
+  flex: 1; min-width: 0; font: inherit; font-size: 24px; padding: 14px 16px; border-radius: 12px;
+  border: 2px solid var(--line); background: var(--bg); color: var(--text); outline: none;
+}
+.nick-row input:focus { border-color: var(--accent); }
+.msg { color: var(--up); min-height: 24px; margin-top: 8px; font-size: 16px; }
+.rules { margin: 6px 0 0; padding-left: 22px; line-height: 1.75; color: #cfd6ea; }
+.gift-note { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #2b2a1a; color: var(--accent); font-weight: 700; }
+.admin { margin-top: 26px; display: flex; gap: 10px; justify-content: center; align-items: center; color: var(--muted); font-size: 14px; flex-wrap: wrap; }
+
+[hidden] { display: none !important; }
+.btn.ghost.danger { color: var(--up); border-color: var(--up); background: var(--danger-bg); }
+.btn:focus-visible, .choice:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.export { margin-top: 18px; }
+.export-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.export-head h2 { margin: 0; }
+.export-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.export-msg { color: var(--muted); font-size: 15px; margin: 12px 0 8px; }
+.export textarea {
+  width: 100%; height: 160px; resize: vertical; font: 13px/1.5 ui-monospace, Consolas, monospace;
+  background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 10px;
+  white-space: pre; overflow: auto;
+}
+
+/* ===== 모드 ===== */
+.mode-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; margin-top: 12px; }
+.mode-row .btn { font-size: 19px; padding: 14px 12px; }
+.btn.practice-btn { background: var(--practice-bg); color: var(--practice); border: 2px solid var(--practice); }
+.mode-pill { background: var(--danger-bg); color: var(--up); }
+body.practice .mode-pill { background: var(--practice-bg); color: var(--practice); }
+body.practice .news .tag { background: var(--practice); color: #06281b; }
+#resMode { color: var(--up); margin: 6px 0 0; font-size: 18px; font-weight: 700; }
+body.practice #resMode { color: var(--practice); }
+
+/* ===== 순위표 ===== */
+table.rank { width: 100%; border-collapse: collapse; font-size: 19px; }
+table.rank td { padding: 10px 8px; border-bottom: 1px solid var(--line); }
+table.rank td.no { width: 48px; font-weight: 800; color: var(--muted); }
+table.rank td.rate { text-align: right; font-weight: 800; }
+table.rank td.money { text-align: right; color: var(--muted); font-size: 16px; }
+table.rank tr.me td { background: #3a3415; }
+table.rank tr.me td.no { color: var(--accent); }
+table.rank tr.gap td { text-align: center; color: var(--muted); border-bottom: 0; padding: 2px; }
+.empty { color: var(--muted); padding: 10px 0; }
+
+/* ===== 라운드 화면 ===== */
+.timer { margin: 16px 0 18px; }
+.timer-head { display: flex; justify-content: space-between; color: var(--muted); font-size: 16px; margin-bottom: 6px; }
+.timer-head b { font-size: 26px; color: var(--text); }
+.timer-head b.hurry { color: var(--up); }
+.bar { height: 14px; background: var(--panel2); border-radius: 999px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 100%; background: var(--accent); border-radius: 999px; }
+.bar i.hurry { background: var(--up); }
+
+.news { background: #fff; color: #111; border-radius: 18px; padding: 22px 26px; position: relative; }
+.news .tag { display: inline-block; background: var(--up); color: #fff; font-weight: 900; padding: 4px 12px; border-radius: 6px; font-size: 16px; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .55; } }
+.news .cat { display: inline-block; margin-left: 6px; padding: 4px 12px; border-radius: 6px; background: #eef1f7; color: #3b4566; font-weight: 700; font-size: 16px; }
+.news h2 { font-size: 34px; margin: 12px 0 6px; letter-spacing: -1px; }
+.news p { margin: 0; color: #444; font-size: 19px; }
+
+.choices { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 22px; }
+.choice {
+  background: var(--panel); border: 2px solid var(--line); border-radius: 16px; color: var(--text);
+  padding: 16px 10px; text-align: center; position: relative;
+}
+.choice:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-2px); }
+.choice:disabled { opacity: .5; cursor: default; }
+.choice .emo { font-size: 38px; display: block; }
+.choice .nm { font-size: 21px; font-weight: 800; display: block; margin-top: 4px; }
+.choice .sec { font-size: 15px; color: var(--muted); }
+.choice .key { position: absolute; top: 8px; left: 10px; font-size: 13px; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 0 6px; }
+.choice.cash { background: #1d2b26; border-color: #2f4a40; }
+
+/* ===== 등락률 공개 화면 ===== */
+.result-hero { text-align: center; padding: 18px 0 8px; }
+.result-hero .sub { color: var(--muted); font-size: 19px; }
+.result-hero .big { font-size: 64px; font-weight: 900; margin: 6px 0; letter-spacing: -2px; }
+.result-hero .money { font-size: 24px; }
+.moves { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin: 22px 0; }
+.move { background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 12px 6px; text-align: center; animation: pop .35s ease both; }
+.move.picked { border-color: var(--accent); box-shadow: 0 0 0 3px #ffcc3333; }
+.move .emo { font-size: 28px; }
+.move .nm { font-size: 15px; font-weight: 700; margin-top: 2px; }
+.move .chg { font-size: 22px; font-weight: 900; margin-top: 4px; }
+.why { background: var(--panel2); border-radius: 14px; padding: 16px 20px; line-height: 1.6; color: #d9dff0; }
+.why b { color: var(--accent); }
+
+/* ===== 최종 결과 화면 ===== */
+.final-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 18px; }
+.title-badge { font-size: 40px; font-weight: 900; margin: 6px 0; }
+.title-desc { color: var(--muted); }
+.stat { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 20px; }
+.stat b { font-size: 26px; }
+.history { margin-top: 12px; font-size: 16px; color: #cfd6ea; line-height: 1.8; }
+.gift { margin-top: 16px; padding: 16px; border-radius: 14px; background: linear-gradient(90deg, #ffcc33, #ff8a3d); color: #1a1a1a; font-weight: 900; font-size: 22px; text-align: center; animation: pop .5s ease; }
+.nogift { margin-top: 16px; padding: 12px; border-radius: 14px; background: var(--panel2); color: var(--muted); text-align: center; }
+
+/* ===== 좁은 화면 ===== */
+@media (max-width: 860px) {
+  .start-grid, .final-grid, .mode-row { grid-template-columns: 1fr; }
+  .choices { grid-template-columns: repeat(2, 1fr); }
+  .moves { grid-template-columns: repeat(4, 1fr); }
+  .hero h1 { font-size: 44px; }
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 시작 화면 -->
+  <section id="start" class="screen active">
+    <div class="hero">
+      <h1>📈 1분 <span>투자 챌린지</span></h1>
+      <p>뉴스를 읽고, 오를 종목을 골라라! 가상 자금 <b id="startMoneyLabel"></b>으로 시작합니다.</p>
+    </div>
+    <div class="start-grid">
+      <div class="card">
+        <h2>닉네임 입력</h2>
+        <div class="nick-row">
+          <input id="nick" maxlength="10" placeholder="최대 10글자" autocomplete="off">
+        </div>
+        <div class="mode-row">
+          <button class="btn" id="hardBtn">🔥 하드 모드 시작</button>
+          <button class="btn practice-btn" id="practiceBtn">연습 모드</button>
+        </div>
+        <div class="msg" id="nickMsg"></div>
+        <ul class="rules" id="rules"></ul>
+        <div class="gift-note" id="giftNote"></div>
+      </div>
+      <div class="card">
+        <h2>🏆 오늘의 TOP 5 · 하드 모드</h2>
+        <div id="startRank"></div>
+      </div>
+    </div>
+    <div class="admin">
+      <span id="todayCount"></span>
+      <button class="btn ghost" id="csvBtn">기록 CSV 내보내기</button>
+      <button class="btn ghost" id="resetBtn">오늘 기록 초기화</button>
+    </div>
+    <div class="card export" id="exportPanel" hidden>
+      <div class="export-head">
+        <h2>오늘 기록</h2>
+        <div class="export-actions">
+          <button class="btn ghost" id="copyBtn">엑셀용으로 복사</button>
+          <button class="btn ghost" id="saveBtn">CSV 파일 저장</button>
+          <button class="btn ghost" id="closeExportBtn">닫기</button>
+        </div>
+      </div>
+      <p class="export-msg" id="exportMsg"></p>
+      <textarea id="exportText" readonly spellcheck="false"></textarea>
+    </div>
+  </section>
+
+  <!-- 라운드 화면 -->
+  <section id="round" class="screen">
+    <div class="topbar">
+      <span class="pill" id="roundLabel"></span>
+      <span class="pill mode-pill" id="modeLabel"></span>
+      <span class="pill">👤 <span id="playerName"></span></span>
+      <span class="pill">보유 자산 <b id="moneyNow"></b></span>
+    </div>
+    <div class="timer">
+      <div class="timer-head"><span>남은 시간 (선택 안 하면 현금 보유)</span><b id="timeText"></b></div>
+      <div class="bar"><i id="timeBar"></i></div>
+    </div>
+    <div class="news">
+      <span class="tag">속보</span> <span class="cat" id="newsCat"></span>
+      <h2 id="newsTitle"></h2>
+      <p id="newsBody"></p>
+    </div>
+    <div class="choices" id="choices"></div>
+  </section>
+
+  <!-- 등락률 공개 화면 -->
+  <section id="reveal" class="screen">
+    <div class="topbar">
+      <span class="pill" id="revealRound"></span>
+      <span class="pill">👤 <span id="revealName"></span></span>
+    </div>
+    <div class="result-hero">
+      <div class="sub" id="revealPick"></div>
+      <div class="big" id="revealChange"></div>
+      <div class="money" id="revealMoney"></div>
+    </div>
+    <div class="moves" id="moves"></div>
+    <div class="why" id="why"></div>
+    <div class="center"><button class="btn" id="nextBtn"></button></div>
+  </section>
+
+  <!-- 최종 결과 화면 -->
+  <section id="result" class="screen">
+    <div class="hero" style="padding-top:10px">
+      <h1 style="font-size:48px">🎉 <span id="resName"></span> 님의 결과</h1>
+      <p id="resMode"></p>
+    </div>
+    <div class="final-grid">
+      <div class="card">
+        <div class="title-desc">나의 투자 성향</div>
+        <div class="title-badge" id="resTitle"></div>
+        <div class="title-desc" id="resTitleDesc"></div>
+        <div class="stat"><span>최종 자산</span><b id="resMoney"></b></div>
+        <div class="stat"><span>수익률</span><b id="resRate"></b></div>
+        <div class="history" id="resHistory"></div>
+        <div id="giftBox"></div>
+      </div>
+      <div class="card">
+        <h2>🏆 오늘의 TOP 5 · 하드 모드</h2>
+        <div id="resRank"></div>
+      </div>
+    </div>
+    <div class="center"><button class="btn" id="againBtn">다음 체험자 ▶</button></div>
+  </section>
+
+</div>
+
+<script>
+// maingame.py 가 config.py + game_data.py 내용을 여기에 넣어 줍니다.
+const GAME = {
+  "config": {
+    "startMoney": 1000000,
+    "rounds": 5,
+    "timeLimit": 10,
+    "giftRate": 40
+  },
+  "stocks": [
+    {
+      "id": "semi",
+      "name": "칩스타전자",
+      "sector": "반도체",
+      "emo": "💾"
+    },
+    {
+      "id": "solar",
+      "name": "그린솔라",
+      "sector": "신재생에너지",
+      "emo": "☀️"
+    },
+    {
+      "id": "food",
+      "name": "맛나푸드",
+      "sector": "식품",
+      "emo": "🍜"
+    },
+    {
+      "id": "ev",
+      "name": "퓨처모터스",
+      "sector": "전기차",
+      "emo": "🚗"
+    },
+    {
+      "id": "bio",
+      "name": "한빛바이오",
+      "sector": "바이오",
+      "emo": "💊"
+    },
+    {
+      "id": "air",
+      "name": "스카이항공",
+      "sector": "항공·여행",
+      "emo": "✈️"
+    },
+    {
+      "id": "game",
+      "name": "픽셀게임즈",
+      "sector": "게임",
+      "emo": "🎮"
+    }
+  ],
+  "practiceNews": [
+    {
+      "id": "ai",
+      "category": "기술",
+      "title": "AI 열풍에 고성능 메모리 주문 폭주",
+      "body": "글로벌 빅테크 기업들이 AI 서버 증설을 위해 반도체를 대량 주문하고 있습니다.",
+      "fx": {
+        "semi": 13,
+        "game": 3,
+        "ev": 2
+      },
+      "why": "AI 서버에는 고성능 메모리가 꼭 필요해 <b>반도체<\/b> 기업의 매출이 크게 늘 것으로 기대됩니다."
+    },
+    {
+      "id": "autodrive",
+      "category": "기술",
+      "title": "퓨처모터스, 완전 자율주행 시험 운행 성공",
+      "body": "운전자 없이 도심 100km를 사고 없이 달리는 데 성공했습니다.",
+      "fx": {
+        "ev": 13,
+        "semi": 4
+      },
+      "why": "자율주행 기술을 먼저 확보하면 미래 자동차 시장을 이끌 수 있어 <b>전기차<\/b> 기업에 호재이고, 자율주행용 칩을 만드는 반도체에도 도움이 됩니다."
+    },
+    {
+      "id": "solar",
+      "category": "정책",
+      "title": "정부, 태양광·풍력 보조금 2배 확대",
+      "body": "탄소중립 목표 달성을 위해 신재생에너지 설비 지원금을 대폭 늘린다고 발표했습니다.",
+      "fx": {
+        "solar": 14,
+        "ev": 4,
+        "semi": 1
+      },
+      "why": "보조금이 늘면 태양광 설비 설치가 늘어나 <b>신재생에너지<\/b> 기업의 이익이 커질 수 있습니다."
+    },
+    {
+      "id": "ramen",
+      "category": "수출·무역",
+      "title": "K-라면 해외 수출액 사상 최대 기록",
+      "body": "K-콘텐츠 인기에 힘입어 라면·과자 수출이 작년보다 40% 늘었습니다.",
+      "fx": {
+        "food": 12,
+        "game": 1
+      },
+      "why": "해외 판매가 늘면 <b>식품<\/b> 기업의 매출과 이익이 함께 늘어납니다."
+    },
+    {
+      "id": "fda",
+      "category": "기업 이슈",
+      "title": "한빛바이오 항암 신약, 미국 FDA 판매 승인",
+      "body": "국내 바이오 기업 최초로 미국에서 항암제 판매 허가를 받았습니다.",
+      "fx": {
+        "bio": 16
+      },
+      "why": "세계에서 가장 큰 의약품 시장인 미국에서 팔 수 있게 되어 <b>바이오<\/b> 기업의 매출이 크게 늘 것으로 기대됩니다."
+    },
+    {
+      "id": "travel",
+      "category": "생활·트렌드",
+      "title": "여름 휴가철 해외여행 수요 역대 최대",
+      "body": "항공권 예약이 작년보다 50% 늘었다는 조사 결과가 나왔습니다.",
+      "fx": {
+        "air": 13,
+        "food": 1,
+        "game": -1
+      },
+      "why": "여행객이 많아지면 <b>항공사<\/b>의 좌석이 꽉 차 매출이 늘어납니다."
+    },
+    {
+      "id": "hitgame",
+      "category": "문화·스포츠",
+      "title": "신작 모바일 게임, 출시 1주 만에 1,000만 다운로드",
+      "body": "픽셀게임즈의 신작이 글로벌 앱 마켓 1위에 올랐습니다.",
+      "fx": {
+        "game": 15,
+        "semi": 2
+      },
+      "why": "흥행작 하나가 회사 실적을 크게 바꾸는 업종이라 <b>게임<\/b> 기업 주가가 크게 오릅니다."
+    },
+    {
+      "id": "crash",
+      "category": "금융·경제",
+      "title": "글로벌 경기 침체 우려에 세계 증시 급락",
+      "body": "주요 경제 지표가 예상보다 크게 나빠졌다는 발표가 나왔습니다.",
+      "fx": {
+        "semi": -8,
+        "solar": -6,
+        "food": -1,
+        "ev": -8,
+        "bio": -5,
+        "air": -9,
+        "game": -5
+      },
+      "why": "시장 전체가 하락할 때는 <b>현금 보유<\/b>가 가장 안전한 선택일 수 있습니다. 생활필수품인 식품은 상대적으로 덜 떨어집니다."
+    }
+  ],
+  "hardNews": [
+    {
+      "id": "vr",
+      "category": "기술",
+      "title": "초경량 VR 기기 돌풍… 가상현실 게임 인기 폭발",
+      "body": "안경처럼 가벼운 VR 기기가 출시 한 달 만에 100만 대 팔렸습니다.",
+      "fx": {
+        "semi": 6.3,
+        "solar": -0.4,
+        "food": -0.9,
+        "ev": 0.6,
+        "bio": -1.2,
+        "air": -1.8,
+        "game": 16.7
+      },
+      "why": "기기가 많이 보급될수록 VR 게임을 즐기는 사람이 늘어 <b>게임<\/b> 기업에 호재이고, 기기 안에 들어가는 반도체 수요도 늘어납니다."
+    },
+    {
+      "id": "battery",
+      "category": "기술",
+      "title": "'꿈의 배터리' 전고체 개발 성공… 10분 충전에 800km",
+      "body": "불이 잘 붙지 않고 충전도 빠른 차세대 배터리가 시험 생산에 들어갑니다.",
+      "fx": {
+        "semi": 3.1,
+        "solar": 6.8,
+        "food": 0.3,
+        "ev": 21.4,
+        "bio": -0.7,
+        "air": -1.5,
+        "game": 0.2
+      },
+      "why": "충전 시간과 화재 걱정이 줄면 <b>전기차<\/b>를 사려는 사람이 크게 늘어납니다. 전기를 저장하는 장치가 좋아져 신재생에너지에도 도움이 됩니다."
+    },
+    {
+      "id": "gamelaw",
+      "category": "정책",
+      "title": "정부, 청소년 게임 이용 시간 제한 규제 검토",
+      "body": "밤 10시 이후 청소년의 온라인 게임 접속을 막는 방안이 논의되고 있습니다.",
+      "fx": {
+        "semi": -1.3,
+        "solar": 0.5,
+        "food": 1.1,
+        "ev": 0.2,
+        "bio": 0.4,
+        "air": 0.8,
+        "game": -17.6
+      },
+      "why": "규제가 생기면 이용자와 결제가 줄어들 수 있어 <b>게임<\/b> 기업에 악재입니다."
+    },
+    {
+      "id": "evsubsidy",
+      "category": "정책",
+      "title": "전기차 구매 보조금, 내년부터 절반으로 축소",
+      "body": "정부 예산 부족으로 전기차 1대당 지원금이 크게 줄어듭니다.",
+      "fx": {
+        "semi": -2.1,
+        "solar": -3.4,
+        "food": 0.6,
+        "ev": -13.8,
+        "bio": 0.9,
+        "air": 0.3,
+        "game": 0.4
+      },
+      "why": "보조금이 줄면 소비자가 내야 할 돈이 늘어나 <b>전기차<\/b> 판매가 줄어들 수 있습니다."
+    },
+    {
+      "id": "oil",
+      "category": "국제",
+      "title": "국제 유가 급등… 배럴당 120달러 돌파",
+      "body": "중동 지역 긴장이 높아지며 원유 가격이 1년 만에 최고치를 기록했습니다.",
+      "fx": {
+        "semi": -1.6,
+        "solar": 9.2,
+        "food": -3.8,
+        "ev": 11.5,
+        "bio": -0.5,
+        "air": -14.3,
+        "game": 0.7
+      },
+      "why": "<b>항공사<\/b>는 연료비 부담이 커지고, 기름값이 오르면 <b>전기차·신재생에너지<\/b>가 대안으로 주목받습니다."
+    },
+    {
+      "id": "carbon",
+      "category": "국제",
+      "title": "세계 각국, 탄소 배출 규제 강화에 합의",
+      "body": "국제 기후 회의에서 2035년까지 탄소 배출을 절반으로 줄이기로 했습니다.",
+      "fx": {
+        "semi": -0.8,
+        "solar": 15.9,
+        "food": -1.4,
+        "ev": 7.2,
+        "bio": 0.3,
+        "air": -6.6,
+        "game": -0.2
+      },
+      "why": "친환경 에너지 수요가 늘어 <b>신재생에너지·전기차<\/b>에 호재이고, 연료를 많이 쓰는 <b>항공사<\/b>는 탄소 비용 부담이 커집니다."
+    },
+    {
+      "id": "lithium",
+      "category": "국제",
+      "title": "배터리 원료 리튬 가격, 1년 새 반토막",
+      "body": "남미 광산의 생산량이 크게 늘며 리튬 가격이 급락했습니다.",
+      "fx": {
+        "semi": 0.9,
+        "solar": 3.6,
+        "food": 0.1,
+        "ev": 8.4,
+        "bio": -0.3,
+        "air": -0.6,
+        "game": 0.5
+      },
+      "why": "배터리는 전기차 가격의 큰 부분을 차지해서, 원료값이 내려가면 <b>전기차<\/b>를 더 싸게 만들 수 있습니다."
+    },
+    {
+      "id": "chinatour",
+      "category": "국제",
+      "title": "중국 단체관광 전면 재개… 관광객 대거 방한 예정",
+      "body": "중국 정부가 한국행 단체여행을 다시 허용했습니다.",
+      "fx": {
+        "semi": 1.2,
+        "solar": -0.3,
+        "food": 7.7,
+        "ev": 0.4,
+        "bio": 0.8,
+        "air": 12.6,
+        "game": 2.3
+      },
+      "why": "관광객이 늘면 <b>항공사<\/b> 승객이 늘고, 한국 과자·라면을 사 가는 관광객이 많아 식품 기업에도 호재입니다."
+    },
+    {
+      "id": "virus",
+      "category": "건강·사회",
+      "title": "신종 감염병 확산 우려… 해외여행 취소 잇따라",
+      "body": "보건 당국이 감염병 경보 단계를 한 단계 높였습니다.",
+      "fx": {
+        "semi": -3.2,
+        "solar": -2.4,
+        "food": 5.6,
+        "ev": -4.1,
+        "bio": 18.3,
+        "air": -19.7,
+        "game": 8.9
+      },
+      "why": "여행 수요는 급감하고, <b>백신·치료제<\/b> 기대감과 집에서 쓰는 소비(<b>게임·간편식<\/b>)는 늘어납니다."
+    },
+    {
+      "id": "aging",
+      "category": "건강·사회",
+      "title": "65세 이상 인구 1,000만 명 돌파",
+      "body": "초고령 사회 진입이 빨라지며 건강 관리 수요가 크게 늘고 있습니다.",
+      "fx": {
+        "semi": -0.6,
+        "solar": 0.2,
+        "food": 2.4,
+        "ev": -0.9,
+        "bio": 10.7,
+        "air": -1.1,
+        "game": -2.8
+      },
+      "why": "나이가 들수록 의약품과 치료 수요가 늘어나 <b>바이오<\/b> 기업이 장기적으로 성장할 것으로 기대됩니다."
+    },
+    {
+      "id": "obesity",
+      "category": "건강·사회",
+      "title": "비만 치료 주사 열풍… 세계에서 가장 많이 팔린 약 등극",
+      "body": "한빛바이오도 비슷한 비만 치료제의 임상 시험을 시작했습니다.",
+      "fx": {
+        "semi": 0.4,
+        "solar": -0.2,
+        "food": -6.3,
+        "ev": 0.3,
+        "bio": 14.2,
+        "air": 0.6,
+        "game": -0.5
+      },
+      "why": "새로운 시장이 열려 <b>바이오<\/b> 기업에 호재입니다. 사람들이 덜 먹게 될 거라는 걱정에 식품 기업 주가는 내려갔습니다."
+    },
+    {
+      "id": "export",
+      "category": "수출·무역",
+      "title": "반도체 수출 규제 강화… 무역 갈등 심화",
+      "body": "주요국이 첨단 반도체와 장비의 수출을 제한하기로 했습니다.",
+      "fx": {
+        "semi": -15.4,
+        "solar": -1.9,
+        "food": 0.8,
+        "ev": -4.6,
+        "bio": 1.3,
+        "air": -0.7,
+        "game": -2.2
+      },
+      "why": "팔 수 있는 시장이 줄어들어 <b>반도체<\/b> 기업에 악재이고, 반도체를 많이 쓰는 전기차에도 부담입니다."
+    },
+    {
+      "id": "fta",
+      "category": "수출·무역",
+      "title": "한국-중동 자유무역협정(FTA) 타결",
+      "body": "자동차·식품 등에 붙던 관세가 단계적으로 사라집니다.",
+      "fx": {
+        "semi": 2.7,
+        "solar": 3.9,
+        "food": 6.1,
+        "ev": 9.8,
+        "bio": 1.4,
+        "air": 1.1,
+        "game": 0.3
+      },
+      "why": "관세가 없어지면 같은 제품을 더 싸게 팔 수 있어 수출이 늘어납니다. 관세가 높던 <b>자동차<\/b>가 가장 큰 혜택을 받습니다."
+    },
+    {
+      "id": "tariff",
+      "category": "수출·무역",
+      "title": "미국, 수입 자동차에 관세 25% 부과",
+      "body": "미국 정부가 해외에서 만든 자동차에 높은 관세를 매기기로 했습니다.",
+      "fx": {
+        "semi": -3.3,
+        "solar": -0.8,
+        "food": 0.5,
+        "ev": -12.9,
+        "bio": 0.7,
+        "air": -0.4,
+        "game": 0.9
+      },
+      "why": "미국에서 팔리는 차 값이 비싸져 판매가 줄어들 수 있어 <b>자동차<\/b> 기업에 악재입니다."
+    },
+    {
+      "id": "recall",
+      "category": "기업 이슈",
+      "title": "전기차 화재 사고 잇따라… 대규모 리콜 결정",
+      "body": "배터리 결함 가능성이 제기되며 퓨처모터스가 10만 대 리콜을 결정했습니다.",
+      "fx": {
+        "semi": -2.6,
+        "solar": -1.7,
+        "food": 0.2,
+        "ev": -18.2,
+        "bio": 0.4,
+        "air": 0.3,
+        "game": 0.6
+      },
+      "why": "리콜 비용과 브랜드 신뢰도 하락이 우려되어 <b>전기차<\/b> 기업 주가에 악재입니다."
+    },
+    {
+      "id": "trial",
+      "category": "기업 이슈",
+      "title": "한빛바이오 신약, 임상 3상 최종 실패",
+      "body": "기대를 모았던 치매 치료제가 마지막 단계에서 효과를 입증하지 못했습니다.",
+      "fx": {
+        "semi": 0.5,
+        "solar": 0.8,
+        "food": 0.4,
+        "ev": 0.9,
+        "bio": -23.5,
+        "air": 0.2,
+        "game": 0.6
+      },
+      "why": "신약 성공 기대감이 이미 주가에 반영돼 있었기 때문에, 실패 소식은 <b>바이오<\/b> 주가의 큰 하락으로 이어집니다."
+    },
+    {
+      "id": "blackout",
+      "category": "기업 이슈",
+      "title": "칩스타전자 공장 정전 사고… 생산 일주일 중단",
+      "body": "갑작스러운 정전으로 반도체 생산 라인이 멈췄습니다.",
+      "fx": {
+        "semi": -8.7,
+        "solar": -0.6,
+        "food": 0.3,
+        "ev": -3.9,
+        "bio": 0.5,
+        "air": -0.2,
+        "game": -1.4
+      },
+      "why": "생산이 멈춘 만큼 팔 제품이 줄어 <b>반도체<\/b> 기업에 악재이고, 칩을 공급받는 전기차 생산에도 차질이 생길 수 있습니다."
+    },
+    {
+      "id": "hack",
+      "category": "기업 이슈",
+      "title": "픽셀게임즈 서버 해킹… 회원 정보 유출 의혹",
+      "body": "게임 회원 수백만 명의 개인정보가 빠져나갔을 가능성이 제기됐습니다.",
+      "fx": {
+        "semi": -0.3,
+        "solar": 0.4,
+        "food": 0.7,
+        "ev": 0.2,
+        "bio": 0.6,
+        "air": 0.5,
+        "game": -14.8
+      },
+      "why": "이용자 신뢰가 떨어지고 과징금을 낼 수도 있어 <b>게임<\/b> 기업에 악재입니다."
+    },
+    {
+      "id": "worldcup",
+      "category": "문화·스포츠",
+      "title": "한국 축구, 월드컵 4강 진출… 전국 응원 열기",
+      "body": "경기가 있는 날마다 치킨·라면 등 야식 판매가 크게 늘고 있습니다.",
+      "fx": {
+        "semi": 0.6,
+        "solar": -0.2,
+        "food": 8.8,
+        "ev": -0.5,
+        "bio": -0.3,
+        "air": 2.9,
+        "game": 1.6
+      },
+      "why": "응원하며 먹는 간식·야식 소비가 늘어 <b>식품<\/b> 기업 매출이 늘어납니다."
+    },
+    {
+      "id": "kdrama",
+      "category": "문화·스포츠",
+      "title": "K-드라마 세계적 흥행… 촬영지 찾는 외국인 관광객 급증",
+      "body": "드라마 촬영지를 보려는 외국인 방문객이 작년보다 두 배 늘었습니다.",
+      "fx": {
+        "semi": 0.4,
+        "solar": 0.1,
+        "food": 4.7,
+        "ev": -0.2,
+        "bio": 0.6,
+        "air": 11.3,
+        "game": 2.1
+      },
+      "why": "한국을 찾는 관광객이 늘면 <b>항공사<\/b>의 승객이 늘고, 한국 음식에 대한 관심도 높아집니다."
+    },
+    {
+      "id": "esports",
+      "category": "문화·스포츠",
+      "title": "e스포츠, 아시안게임 정식 종목 채택",
+      "body": "게임 대회가 올림픽처럼 국가대표 경기로 열리게 됐습니다.",
+      "fx": {
+        "semi": 1.8,
+        "solar": -0.3,
+        "food": 0.9,
+        "ev": -0.1,
+        "bio": -0.4,
+        "air": -0.6,
+        "game": 9.6
+      },
+      "why": "게임이 스포츠로 인정받으면 시청자와 이용자가 늘어 <b>게임<\/b> 기업의 홍보 효과와 매출이 커집니다."
+    },
+    {
+      "id": "olympic",
+      "category": "문화·스포츠",
+      "title": "올림픽 개막… 해외 원정 응원단 출국 러시",
+      "body": "올림픽 개최 도시로 가는 항공권이 빠르게 매진되고 있습니다.",
+      "fx": {
+        "semi": 0.2,
+        "solar": 0.3,
+        "food": 3.4,
+        "ev": -0.4,
+        "bio": -0.2,
+        "air": 7.1,
+        "game": -1.3
+      },
+      "why": "원정 응원을 떠나는 사람이 늘어 <b>항공사<\/b>에 호재이고, 경기 시청 중 간식 소비도 늘어납니다."
+    },
+    {
+      "id": "single",
+      "category": "생활·트렌드",
+      "title": "1인 가구 급증… 간편식·밀키트 시장 고속 성장",
+      "body": "혼자 사는 가구가 전체의 35%를 넘어섰습니다.",
+      "fx": {
+        "semi": 0.1,
+        "solar": -0.4,
+        "food": 10.3,
+        "ev": -0.6,
+        "bio": 0.5,
+        "air": -0.9,
+        "game": 2.4
+      },
+      "why": "혼자 사는 사람이 늘수록 간편하게 먹는 가공식품 수요가 늘어 <b>식품<\/b> 기업에 호재입니다."
+    },
+    {
+      "id": "zero",
+      "category": "생활·트렌드",
+      "title": "'제로 칼로리' 음료 열풍… 판매량 3배 증가",
+      "body": "설탕 대신 대체 감미료를 쓴 음료와 과자가 편의점 판매 1위를 휩쓸고 있습니다.",
+      "fx": {
+        "semi": -0.2,
+        "solar": 0.3,
+        "food": 5.9,
+        "ev": 0.1,
+        "bio": -0.8,
+        "air": 0.4,
+        "game": 0.2
+      },
+      "why": "새로운 인기 상품이 생기면 <b>식품<\/b> 기업의 매출이 늘어납니다."
+    },
+    {
+      "id": "camping",
+      "category": "생활·트렌드",
+      "title": "차박 캠핑 열풍… 전기차 배터리로 캠핑 즐긴다",
+      "body": "전기차 배터리로 전기 제품을 쓰며 차에서 자는 '차박'이 인기입니다.",
+      "fx": {
+        "semi": 0.7,
+        "solar": 2.2,
+        "food": 3.1,
+        "ev": 6.6,
+        "bio": -0.3,
+        "air": -2.4,
+        "game": -0.6
+      },
+      "why": "전기차의 새로운 쓰임새가 알려지며 <b>전기차<\/b> 수요가 늘고, 캠핑용 간편식 판매도 늘어납니다."
+    },
+    {
+      "id": "ratecut",
+      "category": "금융·경제",
+      "title": "한국은행, 기준금리 전격 인하",
+      "body": "경기 회복을 위해 기준금리를 0.5%p 내린다고 발표했습니다.",
+      "fx": {
+        "semi": 3.4,
+        "solar": 8.9,
+        "food": -1.2,
+        "ev": 4.6,
+        "bio": 11.8,
+        "air": 2.1,
+        "game": 2.7
+      },
+      "why": "금리가 내려가면 미래에 큰돈을 벌 것으로 기대되는 성장주(<b>바이오·신재생에너지<\/b>)가 크게 오릅니다. 지금도 꾸준히 돈을 버는 식품 같은 안정적인 기업은 상대적으로 덜 주목받아 오히려 조금 내렸습니다."
+    },
+    {
+      "id": "exchange",
+      "category": "금융·경제",
+      "title": "원·달러 환율 1,500원 돌파… 원화 가치 급락",
+      "body": "달러 대비 원화 가치가 15년 만에 가장 낮아졌습니다.",
+      "fx": {
+        "semi": 7.9,
+        "solar": -1.8,
+        "food": -4.6,
+        "ev": 6.4,
+        "bio": -0.9,
+        "air": -10.2,
+        "game": 3.3
+      },
+      "why": "같은 1달러를 벌어도 더 많은 원화로 바뀌어 수출 기업(<b>반도체·전기차<\/b>)에 유리하고, 달러로 연료비를 내는 <b>항공사<\/b>와 원재료를 수입하는 식품 기업에는 불리합니다."
+    },
+    {
+      "id": "grain",
+      "category": "날씨·환경",
+      "title": "이상 기후로 국제 곡물 가격 폭등",
+      "body": "밀·옥수수 가격이 한 달 사이 30% 올랐습니다.",
+      "fx": {
+        "semi": -0.4,
+        "solar": 0.2,
+        "food": 3.6,
+        "ev": -0.3,
+        "bio": 0.1,
+        "air": -1.7,
+        "game": 0.4
+      },
+      "why": "원재료 값이 오르면 비용이 늘지만, 큰 <b>식품<\/b> 기업은 라면·과자 값을 올려 부담을 소비자에게 넘길 수 있습니다. 가격 인상으로 매출이 늘 거라는 기대에 주가가 오히려 조금 올랐습니다."
+    },
+    {
+      "id": "heatwave",
+      "category": "날씨·환경",
+      "title": "역대급 폭염 예보… 전력 수요 사상 최대 전망",
+      "body": "올여름 낮 최고 기온이 40도를 넘는 날이 이어질 것으로 예상됩니다.",
+      "fx": {
+        "semi": 0.8,
+        "solar": 10.4,
+        "food": 4.2,
+        "ev": -1.1,
+        "bio": 0.3,
+        "air": -0.8,
+        "game": 2.6
+      },
+      "why": "냉방 전력 수요가 늘고 햇빛도 강해 <b>태양광<\/b> 발전이 주목받습니다. 음료·빙과 판매도 늘어납니다."
+    },
+    {
+      "id": "typhoon",
+      "category": "날씨·환경",
+      "title": "초강력 태풍 북상… 주요 공항 항공편 무더기 결항",
+      "body": "이번 주말 전국 공항에서 항공편 500여 편이 취소됐습니다.",
+      "fx": {
+        "semi": -0.9,
+        "solar": -2.3,
+        "food": -3.1,
+        "ev": -0.4,
+        "bio": 0.2,
+        "air": -12.7,
+        "game": 2.8
+      },
+      "why": "결항된 항공편만큼 매출이 줄고 환불 비용도 생겨 <b>항공사<\/b>에 악재입니다. 농작물 피해로 식품 원가도 오를 수 있습니다."
+    },
+    {
+      "id": "finedust",
+      "category": "날씨·환경",
+      "title": "미세먼지 '매우 나쁨' 일주일째… 외출 자제 권고",
+      "body": "전국에 미세먼지 경보가 이어지며 야외 활동이 크게 줄었습니다.",
+      "fx": {
+        "semi": 0.3,
+        "solar": -1.4,
+        "food": 3.5,
+        "ev": 0.6,
+        "bio": 2.9,
+        "air": -4.2,
+        "game": 7.4
+      },
+      "why": "집에 머무는 시간이 늘어 <b>게임<\/b>과 배달·간편식 소비가 늘어납니다."
+    }
+  ],
+  "titles": [
+    {
+      "min": 50,
+      "name": "👑 투자 고수",
+      "desc": "뉴스의 핵심을 정확히 꿰뚫었어요!"
+    },
+    {
+      "min": 25,
+      "name": "🔥 뉴스 해석 달인",
+      "desc": "어떤 산업이 수혜를 입을지 잘 읽어냈어요."
+    },
+    {
+      "min": 10,
+      "name": "📊 안정적인 분석가",
+      "desc": "차분하게 근거를 따져 수익을 냈어요."
+    },
+    {
+      "min": 0,
+      "name": "🌱 신중한 새내기 투자자",
+      "desc": "잃지 않는 것도 실력이에요."
+    },
+    {
+      "min": -15,
+      "name": "🎢 롤러코스터 탑승자",
+      "desc": "오르락내리락, 이게 바로 주식이죠!"
+    },
+    {
+      "min": null,
+      "name": "💪 반등을 노리는 도전자",
+      "desc": "다음 판에서 역전해 봐요!"
+    }
+  ],
+  "cashTitle": {
+    "name": "🛡️ 철벽 현금왕",
+    "desc": "잃지도 얻지도 않았어요. 위험을 싫어하는 성향!"
+  }
+};
+</script>
+<script>
+// =====================================================================
+// 1. 데이터 꺼내기 (maingame.py 가 넣어 준 GAME 객체)
+// =====================================================================
+const CFG = GAME.config;
+const STOCKS = GAME.stocks;
+const PRACTICE_NEWS = GAME.practiceNews;
+const HARD_NEWS = GAME.hardNews;
+const TITLES = GAME.titles;
+const CASH_TITLE = GAME.cashTitle;
+
+// =====================================================================
+// 2. 도우미 함수
+// =====================================================================
+const $ = (id) => document.getElementById(id);
+const won = (n) => Math.round(n).toLocaleString("ko-KR") + "원";
+const signedWon = (n) => (n > 0 ? "+" : n < 0 ? "-" : "") + Math.abs(Math.round(n)).toLocaleString("ko-KR") + "원";
+const pct = (n) => (n > 0 ? "+" : "") + n.toFixed(1) + "%";
+const tone = (n) => (n > 0 ? "up" : n < 0 ? "down" : "flat");
+const round1 = (n) => Math.round(n * 10) / 10;
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const stockById = (id) => STOCKS.find((s) => s.id === id);
+const MODE_LABEL = { practice: "연습 모드", hard: "하드 모드" };
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+const randomOf = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+// 연습 모드 뉴스 뽑기: 뉴스 중 count 개를 똑같은 확률로 뽑음
+function pickPracticeNews(pool, count) {
+  return shuffle(pool.slice()).slice(0, count);
+}
+
+// 하드 모드 뉴스 뽑기:
+//   1) 분야 중 count 개를 똑같은 확률로 뽑고 (순서도 무작위)
+//   2) 뽑힌 분야마다 그 분야 뉴스 중 하나를 똑같은 확률로 뽑음
+//   → 분야가 겹치지 않고, 뉴스 하나가 나올 확률 = (count / 분야 수) × (1 / 그 분야 뉴스 수)
+function pickHardNews(pool, count) {
+  const categories = shuffle([...new Set(pool.map((n) => n.category))]);
+  const picked = categories.slice(0, count).map((c) => randomOf(pool.filter((n) => n.category === c)));
+  // 분야 수가 라운드 수보다 적을 때만: 남은 뉴스로 채움
+  const rest = shuffle(pool.filter((n) => !picked.includes(n)));
+  while (picked.length < count && rest.length) picked.push(rest.pop());
+  return picked;
+}
+
+function show(id) {
+  document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === id));
+}
+
+// =====================================================================
+// 3. 기록 저장 (브라우저 localStorage, 오늘 날짜별) - 하드 모드만 기록
+// =====================================================================
+let memRecords = [];   // localStorage 를 못 쓰는 환경을 위한 예비 저장소
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+const storeKey = () => "investChallenge2:" + todayStr();
+
+function loadRecords() {
+  try {
+    const v = localStorage.getItem(storeKey());
+    if (v) return JSON.parse(v);
+  } catch (e) {}
+  return memRecords.slice();
+}
+
+function saveRecords(recs) {
+  memRecords = recs.slice();
+  try { localStorage.setItem(storeKey(), JSON.stringify(recs)); } catch (e) {}
+}
+
+function sortedRecords() {
+  return loadRecords().sort((a, b) => b.final - a.final || a.time.localeCompare(b.time));
+}
+
+// =====================================================================
+// 4. 순위표 그리기 (하드 모드)
+// =====================================================================
+function renderRank(target, myId) {
+  const recs = sortedRecords();
+  if (!recs.length) {
+    $(target).innerHTML = '<div class="empty">아직 기록이 없어요. 첫 번째 주인공이 되어 보세요!</div>';
+    return;
+  }
+  const medal = ["🥇", "🥈", "🥉", "4", "5"];
+  const row = (r, i) =>
+    `<tr class="${r.id === myId ? "me" : ""}"><td class="no">${i < 5 ? medal[i] : i + 1}</td>` +
+    `<td>${esc(r.name)}${r.id === myId ? " (나)" : ""}</td>` +
+    `<td class="money">${won(r.final)}</td><td class="rate ${tone(r.rate)}">${pct(r.rate)}</td></tr>`;
+  let html = '<table class="rank">' + recs.slice(0, 5).map(row).join("");
+  const myIdx = recs.findIndex((r) => r.id === myId);
+  if (myIdx >= 5) html += '<tr class="gap"><td colspan="4">⋮</td></tr>' + row(recs[myIdx], myIdx);
+  html += "</table>";
+  if (myIdx >= 0) html += `<div class="empty">오늘 하드 모드 참가자 ${recs.length}명 중 <b>${myIdx + 1}위</b></div>`;
+  $(target).innerHTML = html;
+}
+
+function refreshStart() {
+  renderRank("startRank", null);
+  $("todayCount").textContent = `오늘(${todayStr()}) 하드 모드 참가자 ${loadRecords().length}명`;
+}
+
+// =====================================================================
+// 5. 게임 진행: 시작 → 라운드 → 선택 → 공개
+// =====================================================================
+let state = null;
+
+function startGame(mode) {
+  const name = $("nick").value.trim();
+  if (!name) {
+    $("nickMsg").textContent = "닉네임을 입력해 주세요!";
+    $("nick").focus();
+    return;
+  }
+  $("nickMsg").textContent = "";
+  state = {
+    name,
+    mode,
+    money: CFG.startMoney,
+    round: 0,
+    news: mode === "practice" ? pickPracticeNews(PRACTICE_NEWS, CFG.rounds) : pickHardNews(HARD_NEWS, CFG.rounds),
+    log: [],
+    picked: false,
+    timer: null,
+  };
+  state.rounds = state.news.length;
+  document.body.classList.toggle("practice", mode === "practice");
+  startRound();
+}
+
+function startRound() {
+  const n = state.news[state.round];
+  state.picked = false;
+  $("roundLabel").textContent = `ROUND ${state.round + 1} / ${state.rounds}`;
+  $("modeLabel").textContent = MODE_LABEL[state.mode];
+  $("playerName").textContent = state.name;
+  $("moneyNow").textContent = won(state.money);
+  $("newsCat").textContent = n.category;
+  $("newsTitle").textContent = n.title;
+  $("newsBody").textContent = n.body;
+  document.querySelectorAll(".choice").forEach((b) => (b.disabled = false));
+  show("round");
+
+  // 제한 시간 타이머 (0.1초마다 갱신, 시간이 다 되면 현금 보유)
+  state.roundStart = performance.now();
+  const limit = CFG.timeLimit * 1000;
+  const tick = () => {
+    const left = Math.max(0, limit - (performance.now() - state.roundStart));
+    const hurry = left <= 5000;
+    $("timeText").textContent = Math.ceil(left / 1000) + "초";
+    $("timeText").classList.toggle("hurry", hurry);
+    $("timeBar").style.width = (left / limit) * 100 + "%";
+    $("timeBar").classList.toggle("hurry", hurry);
+    if (left <= 0) pick("cash", true);
+  };
+  tick();
+  state.timer = setInterval(tick, 100);
+}
+
+function pick(choiceId, timeout) {
+  if (!state || state.picked) return;
+  state.picked = true;
+  clearInterval(state.timer);
+  document.querySelectorAll(".choice").forEach((b) => (b.disabled = true));
+
+  // 등락률 = 뉴스에 정해 둔 값 그대로 (무작위 없음 → 같은 선택이면 항상 같은 결과)
+  const n = state.news[state.round];
+  const changes = {};
+  STOCKS.forEach((s) => {
+    changes[s.id] = n.fx[s.id] || 0;
+  });
+  const change = choiceId === "cash" ? 0 : changes[choiceId];
+  const before = state.money;
+  state.money = Math.round(before * (1 + change / 100));
+  state.log.push({
+    news: n.title,
+    category: n.category,
+    pick: choiceId === "cash" ? "현금 보유" : stockById(choiceId).name,
+    timeout: !!timeout,
+    secs: round1(Math.min(CFG.timeLimit, (performance.now() - state.roundStart) / 1000)),
+    change,
+    before,
+    after: state.money,
+  });
+  showReveal(choiceId, changes, change, before, timeout);
+}
+
+function showReveal(choiceId, changes, change, before, timeout) {
+  const n = state.news[state.round];
+  $("revealRound").textContent = `ROUND ${state.round + 1} / ${state.rounds} 결과`;
+  $("revealName").textContent = state.name;
+  if (choiceId === "cash") {
+    $("revealPick").textContent = timeout ? "⏰ 시간 초과! 현금 보유로 처리되었어요" : "💵 현금 보유를 선택했어요";
+  } else {
+    const s = stockById(choiceId);
+    $("revealPick").textContent = `${s.emo} ${s.name} (${s.sector})에 투자했어요`;
+  }
+  $("revealChange").textContent = pct(change);
+  $("revealChange").className = "big " + tone(change);
+  const diff = state.money - before;
+  $("revealMoney").innerHTML = `보유 자산 ${won(before)} → <b>${won(state.money)}</b> <span class="${tone(diff)}">(${signedWon(diff)})</span>`;
+
+  $("moves").innerHTML = STOCKS.map((s, i) =>
+    `<div class="move ${s.id === choiceId ? "picked" : ""}" style="animation-delay:${i * 0.08}s">` +
+    `<div class="emo">${s.emo}</div><div class="nm">${s.name}</div>` +
+    `<div class="chg ${tone(changes[s.id])}">${pct(changes[s.id])}</div></div>`
+  ).join("");
+  $("why").innerHTML = "💡 <b>왜 그럴까?</b> " + n.why;
+  $("nextBtn").textContent = state.round + 1 < state.rounds ? "다음 라운드 ▶" : "최종 결과 보기 ▶";
+  state.revealAt = performance.now();
+  show("reveal");
+}
+
+function nextStep() {
+  state.round++;
+  if (state.round < state.rounds) startRound();
+  else finish();
+}
+
+// =====================================================================
+// 6. 최종 결과: 칭호, 선물, 기록 저장, 순위
+//    연습 모드는 기록·순위·선물 없이 결과만 보여 줌
+// =====================================================================
+function titleFor(rate, log) {
+  if (log.every((l) => l.pick === "현금 보유")) return CASH_TITLE;
+  return TITLES.find((t) => t.min === null || rate >= t.min);
+}
+
+function finish() {
+  const rate = round1(((state.money - CFG.startMoney) / CFG.startMoney) * 100);
+  const title = titleFor(rate, state.log);
+  const practice = state.mode === "practice";
+  let myId = null;
+
+  if (!practice) {
+    const rec = {
+      id: Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+      name: state.name,
+      final: state.money,
+      rate,
+      title: title.name,
+      time: new Date().toISOString(),
+      log: state.log,
+    };
+    const recs = loadRecords();
+    recs.push(rec);
+    saveRecords(recs);
+    myId = rec.id;
+  }
+
+  $("resName").textContent = state.name;
+  $("resMode").textContent = MODE_LABEL[state.mode];
+  $("resTitle").textContent = title.name;
+  $("resTitleDesc").textContent = title.desc;
+  $("resMoney").textContent = won(state.money);
+  $("resRate").textContent = pct(rate);
+  $("resRate").className = tone(rate);
+  $("resHistory").innerHTML = state.log.map((l, i) =>
+    `R${i + 1}. ${esc(l.pick)}${l.timeout ? " (시간 초과)" : ""} <span class="${tone(l.change)}">${pct(l.change)}</span>`
+  ).join("<br>");
+  if (practice) {
+    $("giftBox").innerHTML = '<div class="nogift">연습 모드는 선물과 순위가 없어요. 이제 <b>하드 모드</b>에 도전해 보세요!</div>';
+  } else {
+    $("giftBox").innerHTML = rate >= CFG.giftRate
+      ? `<div class="gift">🎁 수익률 ${CFG.giftRate}% 달성! 진행자에게 이 화면을 보여주세요</div>`
+      : `<div class="nogift">선물 기준 수익률 ${CFG.giftRate}%까지 ${(CFG.giftRate - rate).toFixed(1)}%p 남았어요. 다시 도전!</div>`;
+  }
+  renderRank("resRank", myId);
+  show("result");
+}
+
+function nextPlayer() {
+  state = null;
+  document.body.classList.remove("practice");
+  $("nick").value = "";
+  refreshStart();
+  show("start");
+  $("nick").focus();
+}
+
+// =====================================================================
+// 7. 운영자 기능: 기록 내보내기, 오늘 기록 초기화 (하드 모드 기록)
+// =====================================================================
+function recordRows() {
+  const head = ["시간", "닉네임", "최종자산", "수익률(%)", "칭호"];
+  for (let i = 1; i <= CFG.rounds; i++) head.push(`R${i} 뉴스`, `R${i} 선택`, `R${i} 등락률(%)`, `R${i} 소요시간(초)`, `R${i} 시간초과`);
+  const rows = [head];
+  loadRecords().forEach((r) => {
+    const row = [new Date(r.time).toLocaleString("ko-KR"), r.name, r.final, r.rate, r.title];
+    for (let i = 0; i < CFG.rounds; i++) {
+      const l = r.log[i] || {};
+      row.push(l.news ?? "", l.pick ?? "", l.change ?? "", l.secs ?? "", l.news ? (l.timeout ? "Y" : "N") : "");
+    }
+    rows.push(row);
+  });
+  return rows;
+}
+
+function toCsv(rows) {
+  const q = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+  return rows.map((r) => r.map(q).join(",")).join("\r\n");
+}
+
+// 엑셀에 붙여넣으면 칸이 바로 나뉘도록 탭으로 구분
+function toTsv(rows) {
+  return rows.map((r) => r.map((v) => String(v).replace(/[\t\r\n]/g, " ")).join("\t")).join("\n");
+}
+
+function openExport() {
+  const rows = recordRows();
+  $("exportPanel").hidden = false;
+  $("exportText").value = toTsv(rows);
+  $("exportMsg").textContent = rows.length > 1
+    ? `하드 모드 기록 ${rows.length - 1}건. "엑셀용으로 복사"를 누른 뒤 엑셀 첫 칸에 붙여넣으세요. (공유 링크에서는 파일 저장이 막혀 있을 수 있어요)`
+    : "오늘 하드 모드 기록이 아직 없어요.";
+  $("exportPanel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function copyExport() {
+  const text = $("exportText").value;
+  try {
+    await navigator.clipboard.writeText(text);
+    $("exportMsg").textContent = "복사했어요. 엑셀 첫 칸(A1)에 붙여넣으세요.";
+  } catch (e) {
+    $("exportText").focus();
+    $("exportText").select();
+    $("exportMsg").textContent = "자동 복사가 막혀 있어요. 아래 글자가 선택되었으니 Ctrl+C 로 복사하세요.";
+  }
+}
+
+function saveCsvFile() {
+  const blob = new Blob(["﻿" + toCsv(recordRows())], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `invest_records_${todayStr()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// 초기화는 버튼을 4초 안에 두 번 눌러야 실행 (실수 방지)
+let resetArmed = null;
+function resetToday() {
+  const btn = $("resetBtn");
+  if (!resetArmed) {
+    btn.textContent = `정말 ${loadRecords().length}건을 지울까요? 한 번 더 누르기`;
+    btn.classList.add("danger");
+    resetArmed = setTimeout(disarmReset, 4000);
+    return;
+  }
+  disarmReset();
+  memRecords = [];
+  try { localStorage.removeItem(storeKey()); } catch (e) {}
+  $("exportPanel").hidden = true;
+  refreshStart();
+}
+
+function disarmReset() {
+  clearTimeout(resetArmed);
+  resetArmed = null;
+  $("resetBtn").textContent = "오늘 기록 초기화";
+  $("resetBtn").classList.remove("danger");
+}
+
+// =====================================================================
+// 8. 초기화: 화면 문구, 종목 버튼, 버튼·키보드 연결
+// =====================================================================
+function init() {
+  $("startMoneyLabel").textContent = won(CFG.startMoney);
+  $("rules").innerHTML = [
+    `총 <b>${CFG.rounds}라운드</b>, 라운드마다 뉴스 속보가 나와요. 같은 뉴스에서 같은 종목을 고르면 결과는 항상 같아요.`,
+    `<b>연습 모드</b>는 정답이 분명한 뉴스 ${PRACTICE_NEWS.length}개로 연습해요. 선물과 순위는 없어요.`,
+    `<b>하드 모드</b>는 뉴스 ${HARD_NEWS.length}개 중에서 나오고, 순위와 선물이 있어요.`,
+    `<b>${CFG.timeLimit}초</b> 안에 오를 것 같은 종목 1개 또는 현금 보유를 고르세요.`,
+    `<span class="up">빨강 = 상승</span>, <span class="down">파랑 = 하락</span>`,
+  ].map((t) => `<li>${t}</li>`).join("");
+  $("giftNote").textContent = `🎁 하드 모드 최종 수익률 ${CFG.giftRate}% 이상이면 선물 증정! (연습 모드는 선물 없음)`;
+
+  const choices = $("choices");
+  STOCKS.forEach((s, i) => {
+    const b = document.createElement("button");
+    b.className = "choice";
+    b.innerHTML = `<span class="key">${i + 1}</span><span class="emo">${s.emo}</span><span class="nm">${s.name}</span><span class="sec">${s.sector}</span>`;
+    b.onclick = () => pick(s.id, false);
+    choices.appendChild(b);
+  });
+  const cash = document.createElement("button");
+  cash.className = "choice cash";
+  cash.innerHTML = '<span class="key">0</span><span class="emo">💵</span><span class="nm">현금 보유</span><span class="sec">수익 0%</span>';
+  cash.onclick = () => pick("cash", false);
+  choices.appendChild(cash);
+
+  $("hardBtn").onclick = () => startGame("hard");
+  $("practiceBtn").onclick = () => startGame("practice");
+  $("nick").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) startGame("hard"); });
+  $("nextBtn").onclick = nextStep;
+  $("againBtn").onclick = nextPlayer;
+  $("csvBtn").onclick = openExport;
+  $("copyBtn").onclick = copyExport;
+  $("saveBtn").onclick = saveCsvFile;
+  $("closeExportBtn").onclick = () => { $("exportPanel").hidden = true; };
+  $("resetBtn").onclick = resetToday;
+
+  // 키보드: 라운드 중 1~7 종목, 0 현금 / 결과 공개 후 Enter 다음
+  document.addEventListener("keydown", (e) => {
+    const active = document.querySelector(".screen.active").id;
+    if (active === "round" && /^[0-7]$/.test(e.key)) {
+      pick(e.key === "0" ? "cash" : STOCKS[Number(e.key) - 1].id, false);
+    } else if (active === "reveal" && e.key === "Enter" && performance.now() - state.revealAt > 700) {
+      e.preventDefault();
+      nextStep();
+    }
+  });
+
+  refreshStart();
+  $("nick").focus();
+}
+
+init();
+
+</script>
+<a href="../index.html" style="position:fixed;left:12px;bottom:12px;z-index:99;padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:13px/1.4 system-ui,sans-serif;text-decoration:none">← 경기침체 확률 사이트</a>
+</body>
+</html>

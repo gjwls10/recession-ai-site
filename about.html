@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>경기침체 확률 — 방법론</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+</head>
+<body>
+<header class="site"></header>
+<main class="wrap">
+  <h1>방법론</h1>
+  <p class="lead">무엇을 예측하는지, 어떤 데이터와 모델을 쓰는지, 과거에 얼마나 맞았는지, 무엇을 조심해야 하는지 정리했습니다.</p>
+
+  <section class="card prose" id="target"></section>
+
+  <section class="block card">
+    <h2>데이터</h2>
+    <div class="table-scroll" style="max-height:none"><table id="data-table"></table></div>
+  </section>
+
+  <section class="block card prose" id="model-desc"></section>
+
+  <section class="block card">
+    <h2>과거 검증 성능 (워크포워드)</h2>
+    <p class="sub">2008년부터 매월, 그 시점에 공표된 데이터만으로 다시 학습해 예측한 결과입니다. AUC는 1에 가까울수록, Brier 점수는 0에 가까울수록 좋습니다. 합격 기준: AUC ≥ 0.70, 기저율보다 낮은 Brier.</p>
+    <div class="table-scroll" style="max-height:none"><table id="metrics"></table></div>
+  </section>
+
+  <div class="grid cols-2 block">
+    <section class="card">
+      <div class="toolbar"><h2 style="margin:0">보정 곡선</h2><div id="calib-tabs"></div></div>
+      <p class="sub">예측 확률 구간별로 실제 하강 신호가 나온 비율입니다. 대각선에 가까울수록 확률이 믿을 만합니다. 점 크기는 표본 수.</p>
+      <div class="chart" id="calib-chart" role="img" aria-label="보정 곡선"></div>
+      <div id="calib-table"></div>
+    </section>
+    <section class="card">
+      <h2>계수 (표준화)</h2>
+      <p class="sub">피처가 1 표준편차 오를 때 로그오즈 변화. 양수면 확률을 높입니다.</p>
+      <div class="table-scroll" style="max-height:none"><table id="coefs"></table></div>
+    </section>
+  </div>
+
+  <section class="block card">
+    <h2>하강 구간 제외 검증과 신호 선행 개월</h2>
+    <p class="sub">하강 구간 하나(앞뒤 6개월 포함)를 빼고 학습한 뒤 그 구간을 예측했을 때, 구간 안과 밖의 평균 확률입니다. 선행 개월은 확률이 처음 35%를 넘은 예측 시점이 구간 시작보다 몇 개월 앞섰는지입니다(음수는 늦음, –는 넘지 않음).</p>
+    <div class="table-scroll" style="max-height:none"><table id="holdout"></table></div>
+  </section>
+
+  <section class="block card prose" id="limits"></section>
+</main>
+<footer class="site"></footer>
+<script type="module" src="assets/about.js"></script>
+</body>
+</html>

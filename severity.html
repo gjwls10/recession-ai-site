@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>경기침체 확률 — 침체 강도</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+</head>
+<body>
+<header class="site"></header>
+<main class="wrap">
+  <h1>침체 강도</h1>
+  <p class="lead">선행종합지수가 얼마나 깊고 오래 하강하는지, 실물(생산확산지수)로 얼마나 넓게 번졌는지 과거와 비교합니다.</p>
+
+  <div class="hero">
+    <section class="card">
+      <h2>현재 강도 점수</h2>
+      <p class="sub" id="score-sub"></p>
+      <div class="chart mini" id="gauge" role="img" aria-label="강도 점수 게이지"></div>
+    </section>
+    <div class="grid two" id="tiles"></div>
+  </div>
+
+  <section class="block card">
+    <h2>선행종합지수 신호: 실제 경로와 예측</h2>
+    <p class="sub" id="path-sub"></p>
+    <div class="chart" id="path-chart" role="img" aria-label="신호 실제 경로와 예측 구간"></div>
+    <div id="path-table"></div>
+  </section>
+
+  <section class="block card">
+    <div class="toolbar"><h2 style="margin:0">과거 하강 구간과 비교</h2>
+      <label class="stat-label">지표 <select id="indicator"></select></label></div>
+    <p class="sub">각 하강 구간의 시작 월을 0으로 맞춰 정렬했습니다. 회색 실선은 과거 구간, 굵은 점선은 과거 평균, 파란 선은 현재(하강 구간이 아니면 최신 공표월을 0으로 둔 최근 경로)입니다.</p>
+    <div class="chart tall" id="episode-chart" role="img" aria-label="과거 하강 구간 정렬 비교 그래프"></div>
+    <div id="episode-chart-table"></div>
+  </section>
+
+  <section class="block card">
+    <h2>과거 하강 구간 요약</h2>
+    <div class="table-scroll" style="max-height:none"><table id="episodes"></table></div>
+  </section>
+</main>
+<footer class="site"></footer>
+<script type="module" src="assets/severity.js"></script>
+</body>
+</html>

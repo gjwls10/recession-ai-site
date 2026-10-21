@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>경기침체 확률 — 지표 상세</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+</head>
+<body>
+<header class="site"></header>
+<main class="wrap">
+  <h1>지표 상세</h1>
+  <p class="lead">입력 지표 6종, 타깃(선행종합지수), 참고 지표(생산확산지수)의 현재 상태와 과거 대비 위치입니다.</p>
+  <div class="toolbar"><label class="stat-label">지표 <select id="pick"></select></label></div>
+
+  <section class="card">
+    <h2 id="title"></h2>
+    <p class="sub" id="meta-line"></p>
+    <p id="text" style="margin:0"></p>
+  </section>
+
+  <div class="grid cols-4 block" id="tiles"></div>
+
+  <section class="block card">
+    <div class="toolbar"><h2 style="margin:0">시계열</h2><div id="mode-tabs"></div></div>
+    <p class="sub">빨간 음영은 선행종합지수 하강 신호 구간, 회색 음영은 공식 기준순환 수축 국면(참고)입니다.</p>
+    <div class="chart" id="series-chart" role="img" aria-label="지표 시계열 그래프"></div>
+    <div id="series-table"></div>
+  </section>
+
+  <section class="block card" id="contrib-card">
+    <div class="toolbar"><h2 style="margin:0">모델 기여도 추이</h2><div id="contrib-tabs"></div></div>
+    <p class="sub" id="contrib-sub"></p>
+    <div class="chart short" id="contrib-chart" role="img" aria-label="지표 기여도 추이"></div>
+    <div id="contrib-table"></div>
+  </section>
+</main>
+<footer class="site"></footer>
+<script type="module" src="assets/indicators.js"></script>
+</body>
+</html>

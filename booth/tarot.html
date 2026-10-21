@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오늘의 타로</title>
+<style>
+  :root {
+    --bg: #130f26;
+    --panel: #1f1840;
+    --panel2: #2a2154;
+    --line: #3d3270;
+    --text: #f3eefe;
+    --muted: #a99fcc;
+    --gold: #e8c372;
+    --topic: #e8c372;          /* 고른 운세의 색 (아래에서 바뀜) */
+    --card-face: #fbf6ea;
+    --card-ink: #2b2140;
+    color-scheme: dark;
+  }
+  body[data-topic="love"]  { --topic: #ff8fb8; }
+  body[data-topic="study"] { --topic: #7cc0ff; }
+  body[data-topic="money"] { --topic: #8fe0a0; }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: radial-gradient(1200px 600px at 50% -10%, #2b2160 0%, var(--bg) 60%) fixed, var(--bg);
+    color: var(--text);
+    font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+    font-size: 18px;
+  }
+  button { font: inherit; cursor: pointer; }
+  [hidden] { display: none !important; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 48px; }
+  .screen { display: none; }
+  .screen.active { display: block; animation: fade .3s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .btn { border: 0; border-radius: 14px; padding: 14px 26px; font-weight: 800; font-size: 20px;
+         background: var(--gold); color: #241a00; }
+  .btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 600; }
+  .btn:focus-visible, .topic:focus-visible, .back:focus-visible, .slot:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+  .center { text-align: center; }
+  .row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
+
+  /* 시작 화면 */
+  .hero { text-align: center; padding: 28px 0 8px; }
+  .hero .moon { font-size: 64px; }
+  .hero h1 { font-size: 60px; margin: 6px 0 0; letter-spacing: -1px; color: var(--gold); }
+  .hero p { color: var(--muted); font-size: 21px; margin: 12px 0 0; }
+  .topics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 36px; }
+  .topic {
+    background: var(--panel); border: 2px solid var(--line); border-radius: 22px; color: var(--text);
+    padding: 30px 16px; text-align: center; transition: transform .15s, border-color .15s;
+  }
+  .topic:hover { transform: translateY(-4px); }
+  .topic .emo { font-size: 54px; display: block; }
+  .topic .nm { font-size: 30px; font-weight: 900; display: block; margin-top: 8px; }
+  .topic .ds { color: var(--muted); font-size: 17px; }
+  .topic.love:hover  { border-color: #ff8fb8; }
+  .topic.study:hover { border-color: #7cc0ff; }
+  .topic.money:hover { border-color: #8fe0a0; }
+  .note { text-align: center; color: var(--muted); font-size: 14px; margin-top: 28px; }
+
+  /* 카드 고르기 */
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .pill { background: var(--panel2); border-radius: 999px; padding: 8px 18px; font-weight: 800; color: var(--topic); }
+  .guide { text-align: center; margin: 22px 0 6px; font-size: 24px; font-weight: 800; }
+  .guide small { display: block; font-size: 16px; color: var(--muted); font-weight: 500; margin-top: 6px; }
+  .count { text-align: center; color: var(--topic); font-weight: 800; font-size: 20px; margin-bottom: 18px; }
+  .deck { display: grid; grid-template-columns: repeat(11, 1fr); gap: 10px; }
+  .back {
+    aspect-ratio: 2 / 3; border-radius: 10px; border: 2px solid var(--gold);
+    background:
+      radial-gradient(circle at 50% 50%, transparent 28%, rgba(232,195,114,.25) 29%, transparent 31%),
+      repeating-linear-gradient(45deg, #2a2154 0 8px, #241c49 8px 16px);
+    position: relative; transition: transform .2s, opacity .3s, box-shadow .2s;
+    animation: deal .4s ease both;
+  }
+  .back::after { content: "✦"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--gold); font-size: 22px; }
+  .back:hover:not(:disabled) { transform: translateY(-8px); box-shadow: 0 8px 20px rgba(0,0,0,.4); }
+  .back.chosen { transform: translateY(-14px); box-shadow: 0 0 0 4px var(--topic), 0 10px 24px rgba(0,0,0,.5); }
+  .back:disabled { cursor: default; }
+  .back.dim { opacity: .35; }
+  @keyframes deal { from { opacity: 0; transform: translateY(-30px) rotate(-6deg); } to { opacity: 1; transform: none; } }
+
+  /* 결과 */
+  .spread { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 22px; }
+  .slot-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; }
+  .pos { font-weight: 800; color: var(--topic); font-size: 19px; }
+  .slot { width: 100%; max-width: 220px; aspect-ratio: 2 / 3; perspective: 1000px; cursor: pointer; border-radius: 14px; }
+  .slot.open { cursor: default; }
+  .flip { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .8s cubic-bezier(.3,.7,.2,1); }
+  .slot.open .flip { transform: rotateY(180deg); }
+  .face, .cover { position: absolute; inset: 0; border-radius: 14px; backface-visibility: hidden; }
+  .cover {
+    border: 3px solid var(--gold);
+    background:
+      radial-gradient(circle at 50% 50%, transparent 28%, rgba(232,195,114,.3) 29%, transparent 31%),
+      repeating-linear-gradient(45deg, #2a2154 0 10px, #241c49 10px 20px);
+    display: grid; place-items: center; color: var(--gold); font-size: 15px; font-weight: 700;
+  }
+  .face {
+    transform: rotateY(180deg); transition: transform .7s cubic-bezier(.4,.1,.2,1); background: var(--card-face); color: var(--card-ink);
+    border: 3px solid var(--gold); display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    padding: 14px 8px; box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  }
+  .face .inner { display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 100%; width: 100%; }
+  /* 역방향: 앞면으로 뒤집힌 뒤 카드 전체가 180° 돌아 거꾸로 놓임 */
+  .slot.turned .face { transform: rotateY(180deg) rotateZ(180deg); }
+  .orient { visibility: hidden; font-size: 15px; font-weight: 800; padding: 5px 14px; border-radius: 999px; }
+  .orient.show { visibility: visible; animation: fade .3s ease; }
+  .orient.up { background: #2d4a35; color: #9fe6b0; }
+  .orient.rev { background: #4a2d3a; color: #ffb3c8; }
+  .face .no { font-weight: 800; letter-spacing: 2px; font-size: 18px; color: #8a6a1f; }
+  .face .emo { font-size: 64px; }
+  .face .nm { font-weight: 900; font-size: 22px; }
+  .face .en { font-size: 13px; color: #7a6f90; }
+  .reading { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; width: 100%; min-height: 150px; line-height: 1.6; }
+  .reading .title { font-weight: 900; font-size: 19px; }
+  .reading .dir { display: inline-block; font-size: 13px; font-weight: 800; padding: 2px 8px; border-radius: 6px; margin-left: 6px; vertical-align: 2px; }
+  .reading .dir.up { background: #2d4a35; color: #9fe6b0; }
+  .reading .dir.rev { background: #4a2d3a; color: #ffb3c8; }
+  .reading .kw { color: var(--muted); font-size: 15px; margin: 4px 0 6px; }
+  .reading .revnote { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); color: var(--muted); font-size: 14px; }
+  .reading .tap { color: var(--muted); text-align: center; padding-top: 44px; }
+
+  .summary { margin-top: 26px; background: var(--panel); border: 2px solid var(--topic); border-radius: 20px; padding: 22px 24px; }
+  .summary h2 { margin: 0 0 6px; font-size: 26px; }
+  .stars { font-size: 30px; color: var(--gold); letter-spacing: 3px; }
+  .summary p { line-height: 1.7; margin: 10px 0; font-size: 19px; }
+  .lucky { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+  .lucky div { background: var(--panel2); border-radius: 12px; padding: 10px 12px; text-align: center; }
+  .lucky b { display: block; color: var(--topic); font-size: 14px; margin-bottom: 2px; }
+
+  @media (max-width: 860px) {
+    .topics, .spread { grid-template-columns: 1fr; }
+    .deck { grid-template-columns: repeat(6, 1fr); }
+    .hero h1 { font-size: 44px; }
+    .lucky { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 시작: 운세 고르기 -->
+  <section id="start" class="screen active">
+    <div class="hero">
+      <div class="moon">🔮</div>
+      <h1>오늘의 타로</h1>
+      <p>궁금한 운세를 고르고, 마음이 가는 카드 3장을 뽑아 보세요.</p>
+    </div>
+    <div class="topics" id="topics"></div>
+    <div class="note">타로는 재미로 보는 운세예요. 좋은 말은 믿고, 나쁜 말은 조심하라는 뜻으로 받아들여 주세요 🙂</div>
+  </section>
+
+  <!-- 카드 고르기 -->
+  <section id="pick" class="screen">
+    <div class="head">
+      <span class="pill" id="pickTopic"></span>
+      <button class="btn ghost" id="backBtn">← 운세 다시 고르기</button>
+    </div>
+    <div class="guide">마음속으로 질문을 떠올리고 카드 3장을 고르세요
+      <small>고른 순서대로 <span id="posGuide"></span> 자리에 놓여요</small>
+    </div>
+    <div class="count" id="pickCount"></div>
+    <div class="deck" id="deck"></div>
+  </section>
+
+  <!-- 결과 -->
+  <section id="result" class="screen">
+    <div class="head">
+      <span class="pill" id="resTopic"></span>
+      <button class="btn ghost" id="openAllBtn">모두 뒤집기</button>
+    </div>
+    <div class="guide">카드를 눌러 한 장씩 뒤집어 보세요</div>
+    <div class="spread" id="spread"></div>
+    <div class="summary" id="summary" hidden></div>
+    <div class="row" id="endBtns" hidden>
+      <button class="btn" id="againBtn">🔄 같은 운세 다시 보기</button>
+      <button class="btn ghost" id="homeBtn">다른 운세 고르기</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const DATA = {"topics": {"love": {"name": "연애운", "emo": "💕", "desc": "마음, 관계, 설렘", "positions": ["나의 마음", "우리의 관계", "앞으로의 흐름"], "lucky_colors": ["코랄 핑크", "라벤더", "체리 레드", "피치", "로즈 골드"], "lucky_items": ["손편지", "향이 좋은 핸드크림", "커플 키링", "꽃 한 송이", "좋아하는 노래 플레이리스트"], "summary": ["지금은 나 자신을 먼저 아껴 줄 때예요. 서두르지 않으면 좋은 인연은 천천히 다가와요.", "작은 표현이 관계를 바꾸는 시기예요. 먼저 건네는 인사 한마디가 행운의 열쇠!", "사랑의 기운이 활짝 열려 있어요. 마음을 솔직하게 보여 주면 좋은 소식이 찾아와요."]}, "study": {"name": "학업운", "emo": "📚", "desc": "공부, 시험, 집중력", "positions": ["지금의 상태", "도움이 되는 것", "앞으로의 결과"], "lucky_colors": ["스카이 블루", "민트", "네이비", "레몬 옐로", "화이트"], "lucky_items": ["형광펜", "포스트잇", "따뜻한 물 한 잔", "타이머", "새 노트"], "summary": ["잠깐 숨을 고를 때예요. 계획을 작게 나누면 다시 속도가 붙어요.", "꾸준함이 빛을 보기 시작하는 시기예요. 오늘 한 시간이 내일의 점수가 돼요.", "집중력과 운이 함께 올라가는 시기예요. 도전해 보고 싶던 목표에 손을 뻗어 보세요!"]}, "money": {"name": "금전운", "emo": "💰", "desc": "용돈, 저축, 소비", "positions": ["지금의 흐름", "조심할 점", "앞으로의 기회"], "lucky_colors": ["골드", "올리브 그린", "베이지", "에메랄드", "브라운"], "lucky_items": ["동전 지갑", "가계부 앱", "저금통", "할인 쿠폰", "초록색 소품"], "summary": ["지갑을 꼭 닫아 둘 때예요. 꼭 필요한 것만 사면 다음 달이 훨씬 든든해져요.", "들어오는 돈과 나가는 돈의 균형이 맞는 시기예요. 작은 저축을 시작해 보세요.", "재물의 기운이 들어오고 있어요. 계획을 세워 모으면 생각보다 큰 기쁨이 와요."]}}, "cards": [{"no": "0", "name": "바보", "en": "The Fool", "emo": "🎒", "key": ["새로운 시작, 자유, 모험", "무모함, 망설임, 준비 부족"], "score": [4, 2], "love": ["두근거리는 새 인연이 시작될 수 있어요. 가볍게 다가가 보세요.", "설렘만 믿고 서두르면 실수할 수 있어요. 한 박자 쉬어 가요."], "study": ["새 과목이나 공부법에 도전하기 좋은 때예요.", "계획 없이 시작하면 금방 지쳐요. 순서부터 정리해요."], "money": ["새로운 용돈 계획을 세워 보기 좋아요.", "충동구매 주의! 사기 전에 한 번 더 생각해요."]}, {"no": "I", "name": "마법사", "en": "The Magician", "emo": "🪄", "key": ["능력, 자신감, 실행력", "자신감 부족, 속임수, 준비 미흡"], "score": [5, 2], "love": ["내 매력이 가장 빛나는 시기예요. 자신 있게 표현해요.", "말과 행동이 다르면 오해가 생겨요. 진심을 보여 주세요."], "study": ["실력이 제대로 발휘되는 때! 시험·발표에 강해요.", "아는 것을 정리하지 않으면 실수가 나와요. 복습이 답이에요."], "money": ["아이디어로 돈을 벌거나 아낄 방법이 떠올라요.", "너무 좋은 조건의 제안은 의심해 보세요."]}, {"no": "II", "name": "여사제", "en": "The High Priestess", "emo": "🌙", "key": ["직감, 지혜, 차분함", "숨은 마음, 오해, 불안"], "score": [4, 3], "love": ["말하지 않아도 통하는 마음이 있어요. 직감을 믿어요.", "상대의 마음을 혼자 추측하면 오해가 커져요. 물어보세요."], "study": ["조용히 혼자 집중하는 공부가 잘 맞는 시기예요.", "막연한 불안이 집중을 흐려요. 할 일을 적어 보세요."], "money": ["신중하게 판단하면 손해를 피할 수 있어요.", "남의 말만 듣고 결정하지 마세요."]}, {"no": "III", "name": "여황제", "en": "The Empress", "emo": "🌸", "key": ["풍요, 따뜻함, 성장", "게으름, 과한 욕심, 의존"], "score": [5, 3], "love": ["따뜻하고 다정한 기운이 가득해요. 사랑받는 시기예요.", "너무 기대기만 하면 관계가 무거워져요. 나도 챙겨 줘요."], "study": ["노력한 만큼 쑥쑥 성장하는 시기예요.", "편한 것만 하면 실력이 제자리예요. 어려운 문제도 한 개씩!"], "money": ["풍요로운 기운! 뜻밖의 선물이나 용돈이 들어올 수 있어요.", "기분 내다가 지갑이 텅 빌 수 있어요."]}, {"no": "IV", "name": "황제", "en": "The Emperor", "emo": "👑", "key": ["안정, 책임감, 리더십", "고집, 통제, 경직"], "score": [4, 2], "love": ["믿음직한 관계, 안정적인 사랑이 이어져요.", "내 뜻대로만 하려 하면 상대가 지쳐요."], "study": ["계획표대로 꾸준히 하면 확실한 성과가 나요.", "한 방법만 고집하지 말고 다른 공부법도 써 봐요."], "money": ["규칙적인 저축이 든든한 결과를 만들어요.", "돈 문제로 고집을 부리면 다툼이 생길 수 있어요."]}, {"no": "V", "name": "교황", "en": "The Hierophant", "emo": "📜", "key": ["조언, 배움, 신뢰", "틀에 갇힘, 잔소리, 반항"], "score": [4, 3], "love": ["주변의 조언이 관계에 큰 도움이 돼요.", "남들 기준에 맞추느라 내 마음을 놓치지 마세요."], "study": ["선생님·선배의 조언을 들으면 길이 보여요.", "외우기만 하면 금방 잊어요. 이해하며 공부해요."], "money": ["어른의 조언대로 하면 손해 볼 일이 없어요.", "남들 따라 하는 소비는 조심해요."]}, {"no": "VI", "name": "연인", "en": "The Lovers", "emo": "💞", "key": ["사랑, 조화, 선택", "엇갈림, 망설임, 잘못된 선택"], "score": [5, 2], "love": ["최고의 연애 카드! 마음이 통하는 사람과 가까워져요.", "마음이 엇갈릴 수 있어요. 솔직한 대화가 필요해요."], "study": ["함께 공부하는 친구가 큰 힘이 돼요.", "이것저것 고민만 하다 시간이 가요. 하나를 정해요."], "money": ["좋은 선택을 하게 되는 시기예요. 비교해 보고 사요.", "두 가지 다 갖고 싶은 마음, 오늘은 하나만!"]}, {"no": "VII", "name": "전차", "en": "The Chariot", "emo": "🏇", "key": ["전진, 승리, 의지", "조급함, 방향 상실, 충돌"], "score": [5, 2], "love": ["적극적으로 다가가면 좋은 결과가 있어요.", "밀어붙이기만 하면 상대가 부담을 느껴요."], "study": ["목표를 향해 전력 질주! 성적이 오르는 흐름이에요.", "급하게 하면 실수가 늘어요. 속도보다 정확도!"], "money": ["목표 금액을 정하면 빨리 모을 수 있어요.", "급하게 쓰고 후회할 수 있어요."]}, {"no": "VIII", "name": "힘", "en": "Strength", "emo": "🦁", "key": ["용기, 인내, 부드러운 힘", "자신감 부족, 감정 폭발"], "score": [4, 2], "love": ["부드러운 배려가 마음을 움직여요.", "서운함을 참기만 하면 터져요. 차분히 말해요."], "study": ["어려운 과목도 끈기로 이겨낼 수 있어요.", "'나는 못 해'라는 생각이 가장 큰 적이에요."], "money": ["참을성 있게 모으면 원하는 것을 살 수 있어요.", "스트레스 받을 때 쓰는 돈을 조심해요."]}, {"no": "IX", "name": "은둔자", "en": "The Hermit", "emo": "🏮", "key": ["성찰, 혼자만의 시간, 깨달음", "고립, 외로움, 소통 부족"], "score": [3, 2], "love": ["나를 먼저 돌아보는 시간이 좋은 인연을 불러와요.", "혼자 끙끙 앓지 말고 마음을 나눠요."], "study": ["혼자 깊이 파고드는 공부가 효과적이에요.", "모르는 건 바로 질문해요. 혼자 고민하면 늦어져요."], "money": ["조용히 아끼는 습관이 큰 차이를 만들어요.", "돈 고민을 혼자 안고 있지 마세요."]}, {"no": "X", "name": "운명의 수레바퀴", "en": "Wheel of Fortune", "emo": "🎡", "key": ["행운, 전환점, 기회", "엇갈린 타이밍, 일시적 불운"], "score": [5, 3], "love": ["운명 같은 만남이나 반가운 전환점이 찾아와요.", "타이밍이 조금 엇갈려요. 조급해하지 마세요."], "study": ["운이 따르는 시기! 찍은 문제도 맞을지 몰라요.", "컨디션이 오르락내리락해요. 기본기를 지켜요."], "money": ["뜻밖의 행운! 경품·용돈 운이 좋아요.", "들어온 만큼 나갈 수 있어요. 기록해 두세요."]}, {"no": "XI", "name": "정의", "en": "Justice", "emo": "⚖️", "key": ["공정, 균형, 올바른 판단", "불공평, 편견, 미룬 결정"], "score": [4, 2], "love": ["서로 주고받는 균형이 잘 맞는 관계예요.", "한쪽만 노력하면 지쳐요. 균형을 맞춰요."], "study": ["노력한 만큼 정확하게 결과가 나와요.", "미뤄 둔 숙제가 발목을 잡아요. 오늘 끝내요."], "money": ["계산이 정확해지는 시기, 합리적 소비가 가능해요.", "빌려준 돈·빌린 돈을 꼭 정리하세요."]}, {"no": "XII", "name": "매달린 사람", "en": "The Hanged Man", "emo": "🙃", "key": ["기다림, 관점 전환, 인내", "헛된 희생, 정체, 지침"], "score": [3, 2], "love": ["조금 기다리면 상대의 진심이 보여요.", "나만 맞춰 주는 관계는 오래가기 어려워요."], "study": ["다른 시각으로 보면 막힌 문제가 풀려요.", "같은 방법만 반복하면 제자리예요. 바꿔 봐요."], "money": ["지금은 쓰기보다 기다릴 때예요.", "아까워서 못 버리는 지출을 정리해요."]}, {"no": "XIII", "name": "죽음", "en": "Death", "emo": "🦋", "key": ["끝과 새 출발, 변화", "변화 거부, 미련"], "score": [3, 2], "love": ["낡은 감정을 정리하면 새로운 시작이 와요.", "지난 일에 미련을 두면 앞으로 나아가기 어려워요."], "study": ["나쁜 공부 습관을 끊고 새로 시작하기 좋아요.", "안 맞는 방법을 붙잡고 있지 마세요."], "money": ["불필요한 구독·지출을 끊으면 돈이 모여요.", "변화가 두려워 손해를 계속 볼 수 있어요."]}, {"no": "XIV", "name": "절제", "en": "Temperance", "emo": "🏺", "key": ["조화, 균형, 꾸준함", "과함, 불균형, 조급함"], "score": [4, 3], "love": ["잔잔하고 편안한 관계가 이어져요.", "감정 기복이 커질 수 있어요. 천천히 말해요."], "study": ["과목별로 골고루 공부하면 성적이 안정돼요.", "한 과목에만 몰리면 다른 과목이 무너져요."], "money": ["쓰는 돈과 모으는 돈의 균형이 좋아요.", "'이번만'이 쌓이면 큰돈이 돼요."]}, {"no": "XV", "name": "악마", "en": "The Devil", "emo": "⛓️", "key": ["유혹, 집착, 욕망", "속박에서 벗어남, 해방"], "score": [2, 3], "love": ["끌리는 마음이 강하지만 집착은 금물이에요.", "나를 힘들게 하던 감정에서 벗어날 수 있어요."], "study": ["게임·SNS의 유혹이 강해요. 휴대폰을 멀리 두세요.", "나쁜 습관을 끊을 힘이 생기고 있어요."], "money": ["갖고 싶은 게 너무 많아지는 시기, 지갑 주의!", "과소비 습관을 끊을 좋은 기회예요."]}, {"no": "XVI", "name": "탑", "en": "The Tower", "emo": "⚡", "key": ["갑작스러운 변화, 충격, 깨달음", "위기 모면, 작은 흔들림"], "score": [1, 3], "love": ["예상 못 한 일이 생겨도, 진짜 마음을 알게 되는 계기예요.", "큰 다툼은 피할 수 있어요. 말을 아껴요."], "study": ["계획이 흔들릴 수 있어요. 처음부터 다시 다지면 더 단단해져요.", "아슬아슬하지만 위기는 넘겨요. 마무리를 꼼꼼히!"], "money": ["갑작스러운 지출이 생길 수 있어요. 비상금을 챙겨요.", "큰 손해는 피하지만 작은 지출은 조심해요."]}, {"no": "XVII", "name": "별", "en": "The Star", "emo": "⭐", "key": ["희망, 꿈, 치유", "실망, 자신감 저하"], "score": [5, 3], "love": ["반짝이는 희망! 바라던 마음이 이루어질 수 있어요.", "기대가 크면 실망도 커요. 마음을 가볍게."], "study": ["꿈과 목표가 선명해지는 시기, 동기 부여 최고!", "결과가 늦게 나와도 포기하지 마세요."], "money": ["모으는 목표가 즐거워지고 희망이 보여요.", "기대만 하고 행동하지 않으면 그대로예요."]}, {"no": "XVIII", "name": "달", "en": "The Moon", "emo": "🌕", "key": ["불안, 혼란, 상상", "오해가 풀림, 진실이 드러남"], "score": [2, 4], "love": ["상대의 마음이 잘 안 보여 불안할 수 있어요.", "쌓였던 오해가 풀리고 마음이 맑아져요."], "study": ["걱정이 집중을 방해해요. 잠을 충분히 자요.", "헷갈리던 개념이 드디어 이해돼요."], "money": ["애매한 거래나 약속은 피하세요.", "숨은 지출을 찾아내 정리할 수 있어요."]}, {"no": "XIX", "name": "태양", "en": "The Sun", "emo": "☀️", "key": ["성공, 기쁨, 밝은 에너지", "잠깐의 흐림, 과한 자신감"], "score": [5, 4], "love": ["밝고 행복한 연애운! 웃음이 가득한 시기예요.", "기쁨이 조금 늦게 와요. 그래도 흐름은 좋아요."], "study": ["노력이 빛나는 최고의 결과가 기다려요.", "자신감은 좋지만 방심은 금물!"], "money": ["금전운 최고! 좋은 소식이 들려와요.", "잘될 때일수록 계획적으로 써요."]}, {"no": "XX", "name": "심판", "en": "Judgement", "emo": "📯", "key": ["부활, 다시 기회, 결단", "후회, 미룸, 자기비판"], "score": [4, 2], "love": ["다시 연락이 오거나 관계가 새로워질 수 있어요.", "지난 일에 대한 후회는 이제 내려놓아요."], "study": ["재도전하면 이번엔 성공해요!", "자책보다 오답 정리가 먼저예요."], "money": ["잊고 있던 돈이 돌아올 수 있어요.", "결정을 미루면 기회를 놓쳐요."]}, {"no": "XXI", "name": "세계", "en": "The World", "emo": "🌍", "key": ["완성, 성취, 행복한 마무리", "미완성, 마지막 한 걸음"], "score": [5, 3], "love": ["완벽한 조화! 오래 바라던 관계가 이루어져요.", "거의 다 왔어요. 마지막 용기가 필요해요."], "study": ["목표 달성! 노력이 결실을 맺어요.", "마무리가 아쉬워요. 끝까지 검토해요."], "money": ["모으던 목표 금액을 달성할 수 있어요.", "조금만 더 참으면 목표에 닿아요."]}], "pickCount": 3, "reversedRate": 0.35};
+const { topics: TOPICS, cards: CARDS, pickCount: PICK, reversedRate: REV_RATE } = DATA;
+const $ = (id) => document.getElementById(id);
+const randomOf = (arr) => arr[Math.floor(Math.random() * arr.length)];
+// 받침이 있으면 "이에요", 없으면 "예요" (예: 별이에요, 바보예요)
+const ieyo = (word) => {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  return code >= 0 && code <= 11171 && code % 28 !== 0 ? "이에요" : "예요";
+};
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function show(id) {
+  document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === id));
+  window.scrollTo(0, 0);
+}
+
+let state = null;
+
+// ---------- 1. 운세 고르기 ----------
+function chooseTopic(key) {
+  const t = TOPICS[key];
+  document.body.dataset.topic = key;
+  state = { topic: key, deck: shuffle(CARDS.map((_, i) => i)), chosen: [] };
+  $("pickTopic").textContent = `${t.emo} ${t.name}`;
+  $("posGuide").textContent = t.positions.join(" → ");
+  renderDeck();
+  show("pick");
+}
+
+// ---------- 2. 카드 고르기 ----------
+function renderDeck() {
+  $("pickCount").textContent = `${state.chosen.length} / ${PICK}장 선택`;
+  $("deck").innerHTML = "";
+  state.deck.forEach((cardIdx, i) => {
+    const b = document.createElement("button");
+    b.className = "back";
+    b.style.animationDelay = `${i * 0.025}s`;
+    b.setAttribute("aria-label", `${i + 1}번째 카드`);
+    b.onclick = () => chooseCard(b, cardIdx);
+    $("deck").appendChild(b);
+  });
+}
+
+function chooseCard(btn, cardIdx) {
+  if (state.chosen.length >= PICK || btn.classList.contains("chosen")) return;
+  btn.classList.add("chosen");
+  btn.disabled = true;
+  // 정방향 / 역방향은 고르는 순간 정해짐
+  state.chosen.push({ idx: cardIdx, reversed: Math.random() < REV_RATE, open: false });
+  $("pickCount").textContent = `${state.chosen.length} / ${PICK}장 선택`;
+  if (state.chosen.length === PICK) {
+    document.querySelectorAll(".back:not(.chosen)").forEach((b) => { b.disabled = true; b.classList.add("dim"); });
+    setTimeout(showSpread, 700);
+  }
+}
+
+// ---------- 3. 카드 펼치기 & 해석 ----------
+function showSpread() {
+  const t = TOPICS[state.topic];
+  $("resTopic").textContent = `${t.emo} ${t.name}`;
+  $("summary").hidden = true;
+  $("endBtns").hidden = true;
+  $("openAllBtn").hidden = false;
+  $("spread").innerHTML = state.chosen.map((c, i) => {
+    const card = CARDS[c.idx];
+    return `<div class="slot-wrap">
+      <div class="pos">${i + 1}. ${t.positions[i]}</div>
+      <div class="slot" id="slot${i}" role="button" tabindex="0" aria-label="${t.positions[i]} 카드 뒤집기">
+        <div class="flip">
+          <div class="cover">눌러서 뒤집기</div>
+          <div class="face"><div class="inner">
+            <div class="no">${card.no}</div>
+            <div class="emo">${card.emo}</div>
+            <div><div class="nm">${card.name}</div><div class="en">${card.en}</div></div>
+          </div></div>
+        </div>
+      </div>
+      <div class="orient" id="orient${i}"></div>
+      <div class="reading" id="reading${i}"><div class="tap">👆 카드를 눌러 주세요</div></div>
+    </div>`;
+  }).join("");
+  state.chosen.forEach((_, i) => {
+    $("slot" + i).onclick = () => openCard(i);
+    $("slot" + i).onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCard(i); } };
+  });
+  show("result");
+}
+
+// 카드 열기: ① 앞면으로 뒤집기(0.8초) → ② 역방향이면 카드가 180° 돌아 거꾸로 놓임(0.7초) → ③ 해석 표시
+const FLIP_MS = 800, TURN_MS = 700;
+
+function openCard(i) {
+  const c = state.chosen[i];
+  if (c.open) return;
+  c.open = true;
+  const slot = $("slot" + i);
+  slot.classList.add("open");
+  slot.setAttribute("aria-disabled", "true");
+  if (c.reversed) setTimeout(() => slot.classList.add("turned"), FLIP_MS);
+  setTimeout(() => showReading(i), c.reversed ? FLIP_MS + TURN_MS : FLIP_MS * 0.6);
+}
+
+function showReading(i) {
+  const c = state.chosen[i];
+  const card = CARDS[c.idx];
+  const d = c.reversed ? 1 : 0;
+  const orient = $("orient" + i);
+  orient.className = "orient show " + (c.reversed ? "rev" : "up");
+  orient.textContent = c.reversed ? "🔄 역방향 · 카드가 거꾸로 나왔어요" : "⬆️ 정방향";
+  $("reading" + i).innerHTML =
+    `<div class="title">${card.emo} ${card.name}<span class="dir ${c.reversed ? "rev" : "up"}">${c.reversed ? "역방향" : "정방향"}</span></div>` +
+    `<div class="kw">${card.key[d]}</div>` +
+    `<div>${card[state.topic][d]}</div>` +
+    (c.reversed
+      ? `<div class="revnote">역방향은 카드의 뜻이 약해지거나 반대로 바뀐다는 의미예요. (정방향일 때: ${card.key[0]})</div>`
+      : "");
+  c.done = true;
+  if (state.chosen.every((x) => x.done)) showSummary();
+}
+
+function openAll() {
+  state.chosen.forEach((_, i) => setTimeout(() => openCard(i), i * 350));
+}
+
+// ---------- 4. 종합 운세 ----------
+function showSummary() {
+  const t = TOPICS[state.topic];
+  const scores = state.chosen.map((c) => CARDS[c.idx].score[c.reversed ? 1 : 0]);
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const stars = Math.max(1, Math.min(5, Math.round(avg)));
+  const tier = avg < 2.7 ? 0 : avg < 3.7 ? 1 : 2;
+  const revCount = state.chosen.filter((c) => c.reversed).length;
+  const best = state.chosen.reduce((a, c) => (CARDS[c.idx].score[c.reversed ? 1 : 0] > CARDS[a.idx].score[a.reversed ? 1 : 0] ? c : a));
+  $("summary").innerHTML =
+    `<h2>${t.emo} 오늘의 ${t.name}</h2>` +
+    `<div class="stars">${"★".repeat(stars)}${"☆".repeat(5 - stars)}</div>` +
+    `<p>${t.summary[tier]}</p>` +
+    (revCount ? `<p>거꾸로 나온 카드가 <b>${revCount}장</b> 있어요. 역방향 카드의 말은 '조심하면 좋아진다'는 신호로 받아들이세요.</p>` : "") +
+    `<p>가장 힘이 되는 카드는 <b>${CARDS[best.idx].emo} ${CARDS[best.idx].name}</b>${ieyo(CARDS[best.idx].name)}. ${CARDS[best.idx].key[best.reversed ? 1 : 0]}의 기운을 기억하세요.</p>` +
+    `<div class="lucky">` +
+      `<div><b>행운의 색</b>${randomOf(t.lucky_colors)}</div>` +
+      `<div><b>행운의 숫자</b>${1 + Math.floor(Math.random() * 9)}</div>` +
+      `<div><b>행운의 아이템</b>${randomOf(t.lucky_items)}</div>` +
+    `</div>`;
+  $("summary").hidden = false;
+  $("endBtns").hidden = false;
+  $("openAllBtn").hidden = true;
+  setTimeout(() => $("summary").scrollIntoView({ behavior: "smooth", block: "nearest" }), 200);
+}
+
+// ---------- 시작 ----------
+function init() {
+  $("topics").innerHTML = Object.entries(TOPICS).map(([k, t]) =>
+    `<button class="topic ${k}" data-key="${k}"><span class="emo">${t.emo}</span><span class="nm">${t.name}</span><span class="ds">${t.desc}</span></button>`
+  ).join("");
+  document.querySelectorAll(".topic").forEach((b) => { b.onclick = () => chooseTopic(b.dataset.key); });
+  $("backBtn").onclick = () => show("start");
+  $("homeBtn").onclick = () => { delete document.body.dataset.topic; show("start"); };
+  $("againBtn").onclick = () => chooseTopic(state.topic);
+  $("openAllBtn").onclick = openAll;
+}
+init();
+</script>
+<a href="../index.html" style="position:fixed;left:12px;bottom:12px;z-index:99;padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:13px/1.4 system-ui,sans-serif;text-decoration:none">← 경기침체 확률 사이트</a>
+</body>
+</html>

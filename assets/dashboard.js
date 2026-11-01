@@ -1,7 +1,7 @@
 import {
   addMonths, areaSeries, bandChip, bandOf, base, chart, css, episodeRanges, esc, fail, loadAll, num, officialRanges,
   pct, pp, shell, showWarnings, tableToggle, tabs, toDate, ymLabel,
-} from "./common.js";
+} from "./common.js?v=20261101";
 
 shell("index");
 

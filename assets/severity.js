@@ -1,4 +1,4 @@
-import { base, chart, css, esc, fail, loadAll, num, shell, tableToggle, toDate, ymLabel } from "./common.js";
+import { base, chart, css, esc, fail, loadAll, num, shell, tableToggle, toDate, ymLabel } from "./common.js?v=20261101";
 
 shell("severity");
 

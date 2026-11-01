@@ -7,9 +7,6 @@ export const PAGES = [
   { id: "severity", href: "severity.html", label: "침체 강도" },
   { id: "indicators", href: "indicators.html", label: "지표 상세" },
   { id: "about", href: "about.html", label: "방법론" },
-  // 부스 게임 (final/open_site.py 가 booth/ 폴더로 복사)
-  { id: "invest", href: "booth/invest_challenge.html", label: "📈 투자 챌린지" },
-  { id: "tarot", href: "booth/tarot.html", label: "🔮 타로" },
 ];
 export const DISCLAIMER = "통계 모델에 의한 추정치이며 투자 판단의 근거가 아닙니다.";
 export const BAND_ICON = { 낮음: "✓", 주의: "!", 경계: "!!", 높음: "▲" };
